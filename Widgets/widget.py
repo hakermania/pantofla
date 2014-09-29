@@ -222,6 +222,8 @@ class BackgroundPaneWin(Gtk.Window):
 						output.stderr(configurationFile+", line "+str(lineCount)+": Too small interval set for command 'updateInterval': Interval cannot be set less than 800. Setting to 800.")
 						parts[1]=800
 					self.pantoflaWidgetManager.setUpdateInterval(int(parts[1]))
+
+					updateIntervalSet=True
 				else:
 					output.stderr(configurationFile+", line "+str(lineCount)+": Unknown command '"+line+"'")
 			else:
@@ -245,6 +247,9 @@ class BackgroundPaneWin(Gtk.Window):
 		if not backgroundColorSet:
 			self.set_visual(self.get_screen().get_rgba_visual())
 			self.override_background_color(Gtk.StateFlags.NORMAL, Defaults.widget.defaultBgColor)
+
+		if not updateIntervalSet:
+			self.pantoflaWidgetManager.setUpdateInterval(1000)
 
 		self.pantoflaWidgetManager.startUpdating();
 
