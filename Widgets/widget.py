@@ -4,6 +4,8 @@ from gi.repository import WebKit, Gtk, Gdk
 
 import Defaults.widget, Widgets.SubWidgetManager, output
 
+from simplemath import *
+
 class BackgroundPaneWin(Gtk.Window):
 	def __init__(self, name, configurationFile):
 		Gtk.Window.__init__(self, skip_pager_hint=True, skip_taskbar_hint=True)
@@ -18,20 +20,30 @@ class BackgroundPaneWin(Gtk.Window):
 
 		self.pantoflaWidgetManager = Widgets.SubWidgetManager.SubWidgetManager()
 
+		self.styleProvider = Gtk.CssProvider()
+		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
 		self.applyConfigurationFile(configurationFile)
 
 		#Show all the parts
 		self.show_all()
 
 	def commandForReceiver(self, receiver, command, lineCount, configurationFile):
+		"""Sends the command (property) to the appropriate widget (receiver)"""
 		if receiver not in self.pantoflaWidgetManager.receivers:
 			for widget in self.pantoflaWidgetManager.widgets:
 				if receiver.startswith(widget.receiver):
-					self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name)
+					self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(self, receiver, self.name)
 					self.pantoflaWidgetManager.receivers[receiver].runCommand(command, lineCount, configurationFile)
 					break
 		else:
 			self.pantoflaWidgetManager.receivers[receiver].runCommand(command, lineCount, configurationFile)
+
+	def runFromChildToParent(self, child, textToSet):
+		for childd in self.get_children():
+			print "The current text on the child is", childd.get_text()
+			childd.set_text(textToSet)
+			print childd, child
 
 	def applyConfigurationFile(self, configurationFile):
 		try:
@@ -72,18 +84,30 @@ class BackgroundPaneWin(Gtk.Window):
 
 				#Add the last receiver to the window, because now there is a new one. The old one has finished its properties
 				if(lastReceiver!="Widget" and lastReceiver!=None):
-					self.add(self.pantoflaWidgetManager.receivers[lastReceiver].widget()[0])
+					self.add(self.pantoflaWidgetManager.receivers[lastReceiver].widget())
 
 				#Add the new receiver to the list
 				if(receiver!="Widget"):
 					if receiver not in self.pantoflaWidgetManager.receivers:
 						for widget in self.pantoflaWidgetManager.widgets:
 							if receiver.startswith(widget.receiver):
-								self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name)
+								self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(self, receiver, self.name)
 								lastReceiver=receiver
 								break
 
 				continue
+
+			#Remove the spaces between the property and the value
+			if('=' in line):
+				parts=line.split("=")
+				if(len(parts)>=2):
+					parts[0]=parts[0].rstrip()
+					parts[0]=parts[0].lstrip()
+					parts[1]=parts[1].lstrip()
+					line=parts[0]+'='+parts[1]
+					if(len(parts)>2):
+						for i in range(2, len(parts)):
+							line+='='+parts[i]
 
 			if(receiver==None):
 				output.stderr(configurationFile+", line "+str(lineCount)+": Unexpected command: I do not know the receiver of '"+line+"'.\nSkipping...")
@@ -164,16 +188,13 @@ class BackgroundPaneWin(Gtk.Window):
 						output.stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border': Format: border = width, #RRGGBB.\nSkipping...")
 						continue
 
-					styleProvider = Gtk.CssProvider()
-
 					css = """
 						#"""+self.name+""" {
 							border: """+values[0]+"""px solid """+values[1]+""";
 						}
 					"""
 
-					styleProvider.load_from_data(css)
-					Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+					self.styleProvider.load_from_data(css)
 
 				elif(line.startswith("borderRadius=")):
 					parts=line.split("=")
@@ -192,8 +213,6 @@ class BackgroundPaneWin(Gtk.Window):
 					elif not representsInt(parts[1]):
 						output.stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'borderRadius': Format: borderRadius = pixels/percentage.\nSkipping...")
 						continue
-
-					styleProvider = Gtk.CssProvider()
 					css=""
 
 					if not isPercentage:
@@ -208,8 +227,7 @@ class BackgroundPaneWin(Gtk.Window):
 								border-radius: """+parts[1]+""";
 							}
 						"""
-					styleProvider.load_from_data(css)
-					Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+					self.styleProvider.load_from_data(css)
 				elif(line.startswith("updateInterval=")):
 					parts=line.split("=")
 					if(len(parts)!=2):
@@ -234,7 +252,7 @@ class BackgroundPaneWin(Gtk.Window):
 
 		#Add the last receiver to the window. This is the last receiver as the file has ended
 		if(lastReceiver!="Widget" and lastReceiver!=None):
-			self.add(self.pantoflaWidgetManager.receivers[lastReceiver].widget()[0])
+			self.add(self.pantoflaWidgetManager.receivers[lastReceiver].widget())
 
 		#Set the default values to the ones that have to be set
 
@@ -263,18 +281,3 @@ class BackgroundPane:
 class Widget:
 	def __init__(self, name, configurationFile):
 		BackgroundPane(name, configurationFile)
-
-
-def representsInt(s):
-	try: 
-		int(s)
-		return True
-	except ValueError:
-		return False
-
-def representsFloat(s):
-	try:
-		float(s)
-		return True
-	except ValueError:
-		return False

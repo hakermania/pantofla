@@ -11,3 +11,4 @@ defaultBgColor=Gdk.RGBA(0,0,0,0.5)
 defaultScreen=Gdk.Screen.get_default()
 
 defaultClockFormat="%H:%M"
+defaultGmtClockValue=False

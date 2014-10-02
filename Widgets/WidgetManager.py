@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from gi.repository import WebKit, Gtk, Gdk
+from gi.repository import Gtk, Gdk
 
 class WidgetManager():
 	def __init__(self):

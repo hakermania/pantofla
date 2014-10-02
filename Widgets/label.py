@@ -34,4 +34,4 @@ class Widget():
 
 	def widget(self):
 		print "LABEL RETURN"
-		return [self.gtkwidget]
+		return self.gtkwidget
