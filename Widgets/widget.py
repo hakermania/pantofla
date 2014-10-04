@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-from gi.repository import WebKit, Gtk, Gdk
+from gi.repository import GObject, Gtk, Gdk
 
 import Defaults.widget, Widgets.SubWidgetManager, output
 
 from simplemath import *
 
-class BackgroundPaneWin(Gtk.Window):
+class Widget(Gtk.Window):
 	def __init__(self, name, configurationFile):
 		Gtk.Window.__init__(self, skip_pager_hint=True, skip_taskbar_hint=True)
 		
@@ -20,8 +20,17 @@ class BackgroundPaneWin(Gtk.Window):
 
 		self.pantoflaWidgetManager = Widgets.SubWidgetManager.SubWidgetManager()
 
-		self.styleProvider = Gtk.CssProvider()
+		self.styleProvider=Gtk.CssProvider()
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+		self.currentCss=[]
+
+		self.grid = Gtk.Grid()
+		self.grid.set_row_spacing(3)
+		self.grid.set_column_spacing(3)
+		self.YHeight=0
+
+		self.add(self.grid)
 
 		self.applyConfigurationFile(configurationFile)
 
@@ -33,17 +42,11 @@ class BackgroundPaneWin(Gtk.Window):
 		if receiver not in self.pantoflaWidgetManager.receivers:
 			for widget in self.pantoflaWidgetManager.widgets:
 				if receiver.startswith(widget.receiver):
-					self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(self, receiver, self.name)
+					self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name)
 					self.pantoflaWidgetManager.receivers[receiver].runCommand(command, lineCount, configurationFile)
 					break
 		else:
 			self.pantoflaWidgetManager.receivers[receiver].runCommand(command, lineCount, configurationFile)
-
-	def runFromChildToParent(self, child, textToSet):
-		for childd in self.get_children():
-			print "The current text on the child is", childd.get_text()
-			childd.set_text(textToSet)
-			print childd, child
 
 	def applyConfigurationFile(self, configurationFile):
 		try:
@@ -84,14 +87,17 @@ class BackgroundPaneWin(Gtk.Window):
 
 				#Add the last receiver to the window, because now there is a new one. The old one has finished its properties
 				if(lastReceiver!="Widget" and lastReceiver!=None):
-					self.add(self.pantoflaWidgetManager.receivers[lastReceiver].widget())
+					print "ADDING TO GRID", self.pantoflaWidgetManager.receivers[lastReceiver].widget(), self.YHeight
+					self.grid.attach(self.pantoflaWidgetManager.receivers[lastReceiver].widget(), 0, self.YHeight, 1, 1)
+					self.YHeight+=1
+					#self.add(self.pantoflaWidgetManager.receivers[lastReceiver].widget())
 
 				#Add the new receiver to the list
 				if(receiver!="Widget"):
 					if receiver not in self.pantoflaWidgetManager.receivers:
 						for widget in self.pantoflaWidgetManager.widgets:
 							if receiver.startswith(widget.receiver):
-								self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(self, receiver, self.name)
+								self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name)
 								lastReceiver=receiver
 								break
 
@@ -188,14 +194,8 @@ class BackgroundPaneWin(Gtk.Window):
 						output.stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border': Format: border = width, #RRGGBB.\nSkipping...")
 						continue
 
-					css = """
-						#"""+self.name+""" {
-							border: """+values[0]+"""px solid """+values[1]+""";
-						}
-					"""
-
-					self.styleProvider.load_from_data(css)
-
+					self.currentCss.append("border: "+values[0]+"px solid "+values[1]+";")
+					self.updateCss()
 				elif(line.startswith("borderRadius=")):
 					parts=line.split("=")
 					if(len(parts)!=2):
@@ -213,21 +213,12 @@ class BackgroundPaneWin(Gtk.Window):
 					elif not representsInt(parts[1]):
 						output.stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'borderRadius': Format: borderRadius = pixels/percentage.\nSkipping...")
 						continue
-					css=""
 
 					if not isPercentage:
-						css = """
-							#"""+self.name+""" {
-								border-radius: """+parts[1]+"""px;
-							}
-						"""
+						self.currentCss.append("border-radius: "+parts[1]+"px")
 					else:
-						css = """
-							#"""+self.name+""" {
-								border-radius: """+parts[1]+""";
-							}
-						"""
-					self.styleProvider.load_from_data(css)
+						self.currentCss.append("border-radius: "+parts[1])
+					self.updateCss()
 				elif(line.startswith("updateInterval=")):
 					parts=line.split("=")
 					if(len(parts)!=2):
@@ -252,7 +243,10 @@ class BackgroundPaneWin(Gtk.Window):
 
 		#Add the last receiver to the window. This is the last receiver as the file has ended
 		if(lastReceiver!="Widget" and lastReceiver!=None):
-			self.add(self.pantoflaWidgetManager.receivers[lastReceiver].widget())
+			#self.add(self.pantoflaWidgetManager.receivers[lastReceiver].widget())
+			print "ADDING TO GRID", self.pantoflaWidgetManager.receivers[lastReceiver].widget(), self.YHeight
+			self.grid.attach(self.pantoflaWidgetManager.receivers[lastReceiver].widget(), 0, self.YHeight, 1, 1)
+			self.YHeight+=1
 
 		#Set the default values to the ones that have to be set
 
@@ -269,15 +263,21 @@ class BackgroundPaneWin(Gtk.Window):
 		if not updateIntervalSet:
 			self.pantoflaWidgetManager.setUpdateInterval(1000)
 
-		self.pantoflaWidgetManager.startUpdating();
+		#TO REMOVE START
+		# self.YHeight=0
+		# for child in self.grid:
+		# 	self.grid.remove(child)
+		# 	self.pantoflaWidgetManager.receivers={}
+		# 	print "PERNAW1"
+		# 	self.grid.attach(Gtk.Label("Hello"+str(self.YHeight)), 0, self.YHeight, 1, 1)
+		# 	self.YHeight+=1
+		#TO REMOVE END
 
-class BackgroundPane:
-	def __init__(self, name, configurationFile):
-		BackgroundPaneWin(name, configurationFile)
+		self.pantoflaWidgetManager.startUpdating()
 
-	def add_widget(self, widget):
-		pass
-
-class Widget:
-	def __init__(self, name, configurationFile):
-		BackgroundPane(name, configurationFile)
+	def updateCss(self):
+		self.styleProvider.load_from_data("""
+			#"""+self.name+""" {
+				"""+' '.join(self.currentCss)+"""
+			}
+		""")

@@ -10,15 +10,21 @@ from simplemath import *
 receiver="Clock"
 
 class Widget():
-	def __init__(self, parent, name, parentName):
+	def __init__(self, name, parentName):
 		self.gtkwidget=Gtk.Label()
 		self.name=parentName+name
 		self.gtkwidget.set_name(self.name)
+
 		self.format=Defaults.widget.defaultClockFormat
 		self.gmt=Defaults.widget.defaultGmtClockValue
-
 		self.styleProvider=Gtk.CssProvider()
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+		self.currentCss=[]
+
+		self.gtkwidget.set_hexpand(True)
+		self.alignment=Gtk.Alignment()
+		self.alignment.set(0.5, 0.1, 0, 0)
+		self.alignment.add(self.gtkwidget)
 
 	def update(self):
 		if(self.gmt):
@@ -27,6 +33,7 @@ class Widget():
 			self.gtkwidget.set_text(strftime(self.format))
 
 	def runCommand(self, command, lineCount, configurationFile):
+		print command
 		if(command.startswith("format=")):
 			self.format=command[7:]
 		elif(command.startswith("gmt=")):
@@ -46,11 +53,10 @@ class Widget():
 			if(not representsInt(parts[1][:-2])):
 				output.stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'size': Format: size = Npx, N integer.\nSkipping...")
 				return
-			self.styleProvider.load_from_data("""
-				#"""+self.name+""" {
-					font-size: """+parts[1]+""";
-				}
-			""")
+
+			self.currentCss.append("font-size: "+parts[1]+";")
+			self.updateCss()
+
 		elif(command.startswith("color=")):
 			parts=command.split("=")
 			if(len(parts)!=2):
@@ -64,11 +70,16 @@ class Widget():
 				output.stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'color': Format: color = R,G,B,A.\nSkipping...")
 				return
 
-			self.styleProvider.load_from_data("""
-				#"""+self.name+""" {
-					color: rgba("""+values[0]+""","""+values[1]+""","""+values[2]+""","""+values[3]+""");
-				}
-			""")
+			self.currentCss.append("color: rgba("+values[0]+","+values[1]+","+values[2]+","+values[3]+");")
+			self.updateCss()
+
+	def updateCss(self):
+		self.styleProvider.load_from_data("""
+			#"""+self.name+""" {
+				"""+' '.join(self.currentCss)+"""
+			}
+		""")
 
 	def widget(self):
+		return self.alignment
 		return self.gtkwidget

@@ -1,6 +1,6 @@
 #Defaults considering the default widget
 
-from gi.repository import Gdk
+from gi.repository import Gdk, Gtk
 
 name="PantoflaWidget"
 defaultUpdateInterval=1000

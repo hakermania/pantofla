@@ -4,7 +4,6 @@ import Widgets.label, Widgets.clock
 import Defaults.widget
 
 from gi.repository import GObject
-import threading
 
 class SubWidgetManager():
 	def __init__(self):
@@ -19,7 +18,6 @@ class SubWidgetManager():
 
 	def startUpdating(self):
 		GObject.timeout_add(self.updateInterval, self.updateWidgets)
-
 		self.updateWidgets()
 
 	def updateWidgets(self):
