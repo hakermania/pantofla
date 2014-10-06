@@ -1,0 +1,16 @@
+#That is just a sample configuration file to put under ~/.config/pantofla/
+[Widget]
+size=230,561
+position=780,108
+bgColor=0,0,0,1
+border=1, #FFFFFF
+[Clock1]
+format=%H : %M
+gmt = False
+color=255,255,255,1
+size = 23px
+[Clock2]
+format=%A, %B %d
+gmt = False
+color=255,255,255,0.7
+size = 10px

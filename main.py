@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import os, ConfigParser, sys, shutil, signal
-import output, Defaults.app, Widgets.widget, Widgets.WidgetManager
+import Defaults.app, Widgets.widget, Widgets.WidgetManager
+
+from Tools.output import *
 
 def getConfigurationFiles():
 	if not os.path.isdir(Defaults.app.configurationPath):
@@ -39,12 +41,12 @@ def main():
 	configurationFiles = getConfigurationFiles()
 	if(len(configurationFiles)==0):
 		if not createDefaultConfigurationFile():
-			output.stderr("Could not create default configuration files. The application will now exit")
+			stderr("Could not create default configuration files. The application will now exit")
 			sys.exit(1)
 		else:
 			configurationFiles = getConfigurationFiles()
 			if(len(configurationFiles)==0):
-				output.stderr("Could not create default configuration files. The application will now exit")
+				stderr("Could not create default configuration files. The application will now exit")
 				sys.exit(1)
 
 	widgetManager = Widgets.WidgetManager.WidgetManager()
