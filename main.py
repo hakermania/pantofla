@@ -53,7 +53,7 @@ def main():
 
 	for filename in configurationFiles:
 		widgetCount+=1
-		widgetManager.add(Widgets.widget.Widget(Defaults.widget.name+str(widgetCount), filename), filename)
+		widgetManager.add(Widgets.widget.Widget(Defaults.widget.name+str(widgetCount), filename, True), filename)
 
 	widgetManager.run()
 		

@@ -19,24 +19,22 @@ class WidgetManager():
 		Gtk.main()
 
 	def monitorConfigChanges(self):
-		GObject.timeout_add(1000, self.checkConfigChange)
+		GObject.timeout_add(100, self.checkConfigChange)
 
 	def checkConfigChange(self):
-		print "Checking config change"
 		toRemoveIndexes=[]
 		removedConfs=[]
-		currentIndex=0
+		addedIndex=0
 		for widget in self.widgets:
 			widget["currentEditTime"]=os.stat(widget["config"]).st_mtime
 			if(widget["previousEditTime"]!=widget["currentEditTime"]):
-				toRemoveIndexes.append(currentIndex)
+				toRemoveIndexes.append(addedIndex)
 				removedConfs.append({"config" : widget["config"], "name" : widget["widget"].name})
 				widget["widget"].destroy()
-			currentIndex+=1
+				addedIndex+=1
 		if(len(toRemoveIndexes) > 0):
+			print "Config changed!"
 			for i in reversed(toRemoveIndexes):
 				self.widgets.pop(i)
-				self.add(Widgets.widget.Widget(removedConfs[i]["name"], removedConfs[i]["config"]), removedConfs[i]["config"])
+				self.add(Widgets.widget.Widget(removedConfs[i]["name"], removedConfs[i]["config"], False), removedConfs[i]["config"])
 		return True
-
-

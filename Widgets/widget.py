@@ -7,7 +7,7 @@ import Defaults.widget, Widgets.SubWidgetManager, output
 from simplemath import *
 
 class Widget(Gtk.Window):
-	def __init__(self, name, configurationFile):
+	def __init__(self, name, configurationFile, fadeIn):
 		Gtk.Window.__init__(self, skip_pager_hint=True, skip_taskbar_hint=True)
 		
 		#Set the window properties to look like a gadget. These cannot be changed through the configuration file
@@ -32,10 +32,30 @@ class Widget(Gtk.Window):
 
 		self.add(self.grid)
 
-		self.applyConfigurationFile(configurationFile)
+		self.applyConfigurationFile(configurationFile, fadeIn)
+
+		if fadeIn:
+			self.fadeInToDefaultBgColor()
 
 		#Show all the parts
 		self.show_all()
+
+	def fadeInToDefaultBgColor(self):
+		self.currentBgColor = [self.finalBgColor[0], self.finalBgColor[1], self.finalBgColor[2], 0.0]
+		self.fadeInStepValue = self.finalBgColor[3]/100.0
+		GObject.timeout_add(Defaults.widget.defaultFadeInTime/100.0, self.fadeInWidget)
+		self.fadeInWidget()
+
+	def fadeInWidget(self):
+		toReturn=True
+		if(self.currentBgColor[3]+self.fadeInStepValue < self.finalBgColor[3]):
+			self.currentBgColor[3]+=self.fadeInStepValue
+		else:
+			toReturn=False
+			self.currentBgColor[3]=self.finalBgColor[3] #Now currentBgColor == finalBgColor, fade in finished
+		self.set_visual(self.get_screen().get_rgba_visual())
+		self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(self.currentBgColor[0], self.currentBgColor[1], self.currentBgColor[2], self.currentBgColor[3]))
+		return toReturn
 
 	def commandForReceiver(self, receiver, command, lineCount, configurationFile):
 		"""Sends the command (property) to the appropriate widget (receiver)"""
@@ -48,7 +68,7 @@ class Widget(Gtk.Window):
 		else:
 			self.pantoflaWidgetManager.receivers[receiver].runCommand(command, lineCount, configurationFile)
 
-	def applyConfigurationFile(self, configurationFile):
+	def applyConfigurationFile(self, configurationFile, fadeIn):
 		try:
 			f = open(configurationFile, 'r')
 		except:
@@ -178,8 +198,11 @@ class Widget(Gtk.Window):
 						output.stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
 						continue
 
-					self.set_visual(self.get_screen().get_rgba_visual())
-					self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(int(values[0]), int(values[1]), int(values[2]), float(values[3])))
+					if fadeIn:
+						self.finalBgColor = [int(values[0]), int(values[1]), int(values[2]), float(values[3])]
+					else:
+						self.set_visual(self.get_screen().get_rgba_visual())
+						self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(int(values[0]), int(values[1]), int(values[2]), float(values[3])))
 
 					backgroundColorSet=True
 				elif(line.startswith("border=")):
@@ -194,8 +217,7 @@ class Widget(Gtk.Window):
 						output.stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border': Format: border = width, #RRGGBB.\nSkipping...")
 						continue
 
-					self.currentCss.append("border: "+values[0]+"px solid "+values[1]+";")
-					self.updateCss()
+					self.updateCss("border: "+values[0]+"px solid "+values[1]+";")
 				elif(line.startswith("borderRadius=")):
 					parts=line.split("=")
 					if(len(parts)!=2):
@@ -215,10 +237,10 @@ class Widget(Gtk.Window):
 						continue
 
 					if not isPercentage:
-						self.currentCss.append("border-radius: "+parts[1]+"px")
+						self.updateCss("border-radius: "+parts[1]+"px")
 					else:
-						self.currentCss.append("border-radius: "+parts[1])
-					self.updateCss()
+						self.updateCss("border-radius: "+parts[1])
+					
 				elif(line.startswith("updateInterval=")):
 					parts=line.split("=")
 					if(len(parts)!=2):
@@ -257,9 +279,11 @@ class Widget(Gtk.Window):
 			self.move(Defaults.widget.defaultScreen.get_width()/2-self.get_size()[0]/2, Defaults.widget.defaultScreen.get_height()/2-self.get_size()[1]/2)
 
 		if not backgroundColorSet:
-			self.set_visual(self.get_screen().get_rgba_visual())
-			self.override_background_color(Gtk.StateFlags.NORMAL, Defaults.widget.defaultBgColor)
-
+			if fadeIn:
+				self.finalBgColor = Defaults.widget.defaultBgColor
+			else:
+				self.set_visual(self.get_screen().get_rgba_visual())
+				self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(Defaults.widget.defaultBgColor[0], Defaults.widget.defaultBgColor[1], Defaults.widget.defaultBgColor[2], Defaults.widget.defaultBgColor[3]))
 		if not updateIntervalSet:
 			self.pantoflaWidgetManager.setUpdateInterval(1000)
 
@@ -275,7 +299,8 @@ class Widget(Gtk.Window):
 
 		self.pantoflaWidgetManager.startUpdating()
 
-	def updateCss(self):
+	def updateCss(self, newCss):
+		self.currentCss.append(newCss)
 		self.styleProvider.load_from_data("""
 			#"""+self.name+""" {
 				"""+' '.join(self.currentCss)+"""

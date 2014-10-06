@@ -42,8 +42,7 @@ class Widget():
 				output.stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'size': Format: size = Npx, N integer.\nSkipping...")
 				return
 
-			self.currentCss.append("font-size: "+parts[1]+";")
-			self.updateCss()
+			self.updateCss("font-size: "+parts[1]+";")
 
 		elif(command.startswith("color=")):
 			parts=command.split("=")
@@ -58,10 +57,12 @@ class Widget():
 				output.stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'color': Format: color = R,G,B,A.\nSkipping...")
 				return
 
-			self.currentCss.append("color: rgba("+values[0]+","+values[1]+","+values[2]+","+values[3]+");")
-			self.updateCss()
+			self.updateCss("color: rgba("+values[0]+","+values[1]+","+values[2]+","+values[3]+");")
+		else:
+			output.stderr(configurationFile+", line "+str(lineCount)+": Unknown command '"+command+"'")
 
-	def updateCss(self):
+	def updateCss(self, newCss):
+		self.currentCss.append(newCss)
 		self.styleProvider.load_from_data("""
 			#"""+self.name+""" {
 				"""+' '.join(self.currentCss)+"""
