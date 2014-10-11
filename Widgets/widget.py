@@ -19,6 +19,8 @@ class Widget(Gtk.Window):
 		self.set_keep_below(True)
 		self.stick()
 
+		self.rgbaVisual = self.get_screen().get_rgba_visual()
+
 		self.pantoflaWidgetManager = Widgets.SubWidgetManager.SubWidgetManager()
 
 		self.styleProvider=Gtk.CssProvider()
@@ -44,19 +46,20 @@ class Widget(Gtk.Window):
 	def fadeInToDefaultBgColor(self):
 		self.currentBgColor = [self.finalBgColor[0], self.finalBgColor[1], self.finalBgColor[2], 0.0]
 		self.fadeInStepValue = self.finalBgColor[3]/100.0
-		GObject.timeout_add(Defaults.widget.defaultFadeInTime/100.0, self.fadeInWidget)
 		self.fadeInWidget()
+		GObject.timeout_add(Defaults.widget.defaultFadeInTime/100.0, self.fadeInWidget)
+		
 
 	def fadeInWidget(self):
-		toReturn=True
+		self.set_visual(self.rgbaVisual)
 		if(self.currentBgColor[3]+self.fadeInStepValue < self.finalBgColor[3]):
 			self.currentBgColor[3]+=self.fadeInStepValue
+			self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(self.currentBgColor[0], self.currentBgColor[1], self.currentBgColor[2], self.currentBgColor[3]))
+			return True
 		else:
 			toReturn=False
-			self.currentBgColor[3]=self.finalBgColor[3] #Now currentBgColor == finalBgColor, fade in finished
-		self.set_visual(self.get_screen().get_rgba_visual())
-		self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(self.currentBgColor[0], self.currentBgColor[1], self.currentBgColor[2], self.currentBgColor[3]))
-		return toReturn
+			self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(self.finalBgColor[0], self.finalBgColor[1], self.finalBgColor[2], self.finalBgColor[3]))
+			return False;
 
 	def commandForReceiver(self, receiver, command, lineCount, configurationFile):
 		"""Sends the command (property) to the appropriate widget (receiver)"""
@@ -108,7 +111,6 @@ class Widget(Gtk.Window):
 
 				#Add the last receiver to the window, because now there is a new one. The old one has finished its properties
 				if(lastReceiver!="Widget" and lastReceiver!=None):
-					print "ADDING TO GRID", self.pantoflaWidgetManager.receivers[lastReceiver].widget(), self.YHeight
 					self.grid.attach(self.pantoflaWidgetManager.receivers[lastReceiver].widget(), 0, self.YHeight, 1, 1)
 					self.YHeight+=1
 					#self.add(self.pantoflaWidgetManager.receivers[lastReceiver].widget())
@@ -202,7 +204,7 @@ class Widget(Gtk.Window):
 					if fadeIn:
 						self.finalBgColor = [int(values[0]), int(values[1]), int(values[2]), float(values[3])]
 					else:
-						self.set_visual(self.get_screen().get_rgba_visual())
+						self.set_visual(self.rgbaVisual)
 						self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(int(values[0]), int(values[1]), int(values[2]), float(values[3])))
 
 					backgroundColorSet=True
@@ -266,8 +268,6 @@ class Widget(Gtk.Window):
 
 		#Add the last receiver to the window. This is the last receiver as the file has ended
 		if(lastReceiver!="Widget" and lastReceiver!=None):
-			#self.add(self.pantoflaWidgetManager.receivers[lastReceiver].widget())
-			print "ADDING TO GRID", self.pantoflaWidgetManager.receivers[lastReceiver].widget(), self.YHeight
 			self.grid.attach(self.pantoflaWidgetManager.receivers[lastReceiver].widget(), 0, self.YHeight, 1, 1)
 			self.YHeight+=1
 
@@ -283,7 +283,7 @@ class Widget(Gtk.Window):
 			if fadeIn:
 				self.finalBgColor = Defaults.widget.defaultBgColor
 			else:
-				self.set_visual(self.get_screen().get_rgba_visual())
+				self.set_visual(self.rgbaVisual)
 				self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(Defaults.widget.defaultBgColor[0], Defaults.widget.defaultBgColor[1], Defaults.widget.defaultBgColor[2], Defaults.widget.defaultBgColor[3]))
 		if not updateIntervalSet:
 			self.pantoflaWidgetManager.setUpdateInterval(1000)

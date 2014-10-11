@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, Pango
 
 import Defaults.widget
 
@@ -25,25 +25,22 @@ class Widget():
 		if(command.startswith("text=")):
 			parts=command.split("=")
 			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'text': Format: text = \"text\".\nSkipping...")
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'text': Format: text = 'text'.\nSkipping...")
 				return
-			if(not (parts[1].startswith("\"") and parts[1].endswith("\""))):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'text': Format: text = \"text\".\nSkipping...")
+			if(not (parts[1].startswith("'") and parts[1].endswith("'"))):
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'text': Format: text = 'text'.\nSkipping...")
 				return
 			
 			self.text=parts[1][1:-1] #Remove the ""
 
 			self.gtkwidget.set_text(self.text)
-		elif(command.startswith("size=")):
+		elif(command.startswith("font=")):
 			parts=command.split("=")
 			if(len(parts)>2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'size': Format: size = Npx, N integer.\nSkipping...")
-				return
-			if(not representsInt(parts[1][:-2])):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'size': Format: size = Npx, N integer.\nSkipping...")
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'font': Format: font = fontName size, N integer.\nSkipping...")
 				return
 
-			self.updateCss("font-size: "+parts[1]+";")
+			self.gtkwidget.modify_font(Pango.FontDescription(parts[1]))
 
 		elif(command.startswith("color=")):
 			parts=command.split("=")

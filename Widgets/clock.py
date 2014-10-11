@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, Pango
 from time import gmtime, strftime
 
 import Defaults.widget
 
 from Tools.output import *
 from Tools.simplemath import *
-
-
-
-
 
 receiver="Clock"
 
@@ -24,12 +20,19 @@ class Widget():
 		self.gmt=Defaults.widget.defaultGmtClockValue
 		self.styleProvider=Gtk.CssProvider()
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-		self.currentCss=[]
+		self.currentCss={}
 
 		self.gtkwidget.set_hexpand(True)
 		self.alignment=Gtk.Alignment()
 		self.alignment.set(0.5, 0.1, 0, 0)
+		self.alignmentName = self.name+"Alignment"
+		self.alignment.set_name(self.alignmentName)
 		self.alignment.add(self.gtkwidget)
+
+		self.frame = Gtk.Frame()
+		self.frameName = self.name+"Frame"
+		self.frame.set_name(self.frameName)
+		self.frame.add(self.alignment)
 
 	def update(self):
 		if(self.gmt):
@@ -38,7 +41,6 @@ class Widget():
 			self.gtkwidget.set_text(strftime(self.format))
 
 	def runCommand(self, command, lineCount, configurationFile):
-		print command
 		if(command.startswith("format=")):
 			self.format=command[7:]
 		elif(command.startswith("gmt=")):
@@ -50,16 +52,13 @@ class Widget():
 				self.gmt=True
 			else:
 				self.gmt=False
-		elif(command.startswith("size=")):
+		elif(command.startswith("font=")):
 			parts=command.split("=")
 			if(len(parts)>2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'size': Format: size = Npx, N integer.\nSkipping...")
-				return
-			if(not representsInt(parts[1][:-2])):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'size': Format: size = Npx, N integer.\nSkipping...")
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'font': Format: font = fontName size, N integer.\nSkipping...")
 				return
 
-			self.updateCss("font-size: "+parts[1]+";")
+			self.gtkwidget.modify_font(Pango.FontDescription(parts[1]))
 		elif(command.startswith("color=")):
 			parts=command.split("=")
 			if(len(parts)!=2):
@@ -73,17 +72,47 @@ class Widget():
 				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'color': Format: color = R,G,B,A.\nSkipping...")
 				return
 			self.updateCss("color: rgba("+values[0]+","+values[1]+","+values[2]+","+values[3]+");")
+		elif(command.startswith("bgColor=")):
+			parts=command.split("=")
+			if(len(parts)!=2):
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
+				return
+			values=parts[1].split(",")
+			if(len(values)!=4):
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
+				return
+
+			if(not representsInt(values[0]) or not representsInt(values[1]) or not representsInt(values[2]) or not representsFloat(values[3])):
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
+				return
+
+			self.updateCss("background-color: rgba("+values[0]+","+values[1]+","+values[2]+","+values[3]+");", self.alignmentName)
+		elif(command.startswith("background-image=")):
+			parts=command.split("=")
+			if(len(parts)!=2):
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'background-image': Format: background-image = 'path'.\nSkipping...")
+				return
+
+			if(not (parts[1].startswith("'") and parts[1].endswith("'"))):
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'background-image': Format: background-image = 'path'.\nSkipping...")
+				return
+			
+			self.updateCss("background-image: url("+parts[1]+");", self.frameName)
 		else:
 			stderr(configurationFile+", line "+str(lineCount)+": Unknown command '"+command+"'")
 
-	def updateCss(self, newCss):
-		self.currentCss.append(newCss)
+	def updateCss(self, newCss, name=None):
+		if(name is None):
+			name=self.name
+		if name not in self.currentCss:
+			self.currentCss[name]=[]
+		self.currentCss[name].append(newCss)
+		print "CSS:", name, self.currentCss[name]
 		self.styleProvider.load_from_data("""
-			#"""+self.name+""" {
-				"""+' '.join(self.currentCss)+"""
+			#"""+name+""" {
+				"""+' '.join(self.currentCss[name])+"""
 			}
 		""")
 
 	def widget(self):
-		return self.alignment
-		return self.gtkwidget
+		return self.frame
