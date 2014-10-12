@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from gi.repository import Gtk, Gdk, Pango
+from gi.repository import Gtk, Gdk
 from time import gmtime, strftime
 
 import Defaults.widget
@@ -32,9 +32,24 @@ class Widget():
 		self.frame = Gtk.Frame()
 		self.frameName = self.name+"Frame"
 		self.frame.set_name(self.frameName)
+		self.frame.set_shadow_type(Gtk.ShadowType(Gtk.ShadowType.NONE))
 		self.frame.add(self.alignment)
 
+		self.frame.connect('destroy', self.destroyed)
+
+		self.cssClear = [ self.name, self.alignmentName, self.frameName ]
+		self.firstUpdate=True
+
+		#self.updateCss("margin-top: 50px;", self.alignmentName)
+
+	def destroyed(self, widget):
+		for name in self.cssClear:
+			self.styleProvider.load_from_data("#"+name+" { } ")
+
 	def update(self):
+		if(self.firstUpdate):
+			self.firstUpdate=False
+			self.applyCss()
 		if(self.gmt):
 			self.gtkwidget.set_text(strftime(self.format, gmtime()))
 		else:
@@ -58,7 +73,7 @@ class Widget():
 				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'font': Format: font = fontName size, N integer.\nSkipping...")
 				return
 
-			self.gtkwidget.modify_font(Pango.FontDescription(parts[1]))
+			self.updateCss("font: "+parts[1]+";")
 		elif(command.startswith("color=")):
 			parts=command.split("=")
 			if(len(parts)!=2):
@@ -86,7 +101,7 @@ class Widget():
 				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
 				return
 
-			self.updateCss("background-color: rgba("+values[0]+","+values[1]+","+values[2]+","+values[3]+");", self.alignmentName)
+			self.updateCss("background-color: rgba("+values[0]+","+values[1]+","+values[2]+","+values[3]+");", self.frameName)
 		elif(command.startswith("background-image=")):
 			parts=command.split("=")
 			if(len(parts)!=2):
@@ -106,13 +121,15 @@ class Widget():
 			name=self.name
 		if name not in self.currentCss:
 			self.currentCss[name]=[]
+		print "'"+newCss+"'"
 		self.currentCss[name].append(newCss)
-		print "CSS:", name, self.currentCss[name]
-		self.styleProvider.load_from_data("""
-			#"""+name+""" {
-				"""+' '.join(self.currentCss[name])+"""
-			}
-		""")
+
+	def applyCss(self):
+		finalString=''
+		for name in self.currentCss:
+			finalString+="#"+name+" { "+' '.join(self.currentCss[name])+" } "
+		print finalString
+		self.styleProvider.load_from_data(finalString)
 
 	def widget(self):
 		return self.frame

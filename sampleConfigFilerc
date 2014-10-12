@@ -1,16 +1,30 @@
-#That is just a sample configuration file to put under ~/.config/pantofla/
+#Default configuration file for a Pantofla widget.
+#Every new widget uses this configuration file.
+#Edit only if you know what you're doing.
 [Widget]
 size=230,561
+#1017 gia na paei akribws panw sto allo
 position=780,108
-bgColor=0,0,0,1
+borderRadius = 3
+bgColor=0,0,0,0.9
 border=1, #FFFFFF
-[Clock1]
+[Clock1,0,0,12,1]
 format=%H : %M
 gmt = False
 color=255,255,255,1
-size = 23px
-[Clock2]
+#bgColor=0,255,0,0.1
+font = Droid Sans 23
+#background-image = '/home/alex/36.png'
+[Clock2,0,1,12,2]
 format=%A, %B %d
 gmt = False
 color=255,255,255,0.7
-size = 10px
+font = Droid Sans 10
+[Label1,0,3,6,1]
+text='Hey there'
+font = Ubuntu 13
+color = 94,39,80,1
+[Label2,7,3,6,1]
+text='party people'
+font = Ubuntu 13
+color = 0,39,80,1

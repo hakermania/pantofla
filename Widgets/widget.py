@@ -8,22 +8,28 @@ from Tools.output import *
 from Tools.simplemath import *
 
 class Widget(Gtk.Window):
+
 	def __init__(self, name, configurationFile, fadeIn):
-		Gtk.Window.__init__(self, skip_pager_hint=True, skip_taskbar_hint=True)
+		Gtk.Window.__init__(self,
+			accept_focus=False, skip_pager_hint=True,
+			skip_taskbar_hint=True, decorated=False,
+			deletable=False, focus_on_map=False,
+			focus_visible=False, has_resize_grip=False,
+			type_hint=Gdk.WindowTypeHint.DOCK)
 		
 		#Set the window properties to look like a gadget. These cannot be changed through the configuration file
 		self.set_name(name)
-		self.name=name
+		self.name = name
 		self.set_wmclass(Defaults.widget.wmClass, Defaults.widget.wmClass)
-		self.set_type_hint(Gdk.WindowTypeHint.DOCK)
 		self.set_keep_below(True)
+		self.set_sensitive(False)
 		self.stick()
 
 		self.rgbaVisual = self.get_screen().get_rgba_visual()
 
 		self.pantoflaWidgetManager = Widgets.SubWidgetManager.SubWidgetManager()
 
-		self.styleProvider=Gtk.CssProvider()
+		self.styleProvider = Gtk.CssProvider()
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
 		self.currentCss=[]
@@ -31,16 +37,19 @@ class Widget(Gtk.Window):
 		self.grid = Gtk.Grid()
 		self.grid.set_row_spacing(3)
 		self.grid.set_column_spacing(3)
-		self.YHeight=0
+		self.currentGridPosition = []
 
 		self.add(self.grid)
 
 		self.applyConfigurationFile(configurationFile, fadeIn)
 
+		self.set_resizable(False)
+
+		self.applyCss()
+
 		if fadeIn:
 			self.fadeInToDefaultBgColor()
 
-		#Show all the parts
 		self.show_all()
 
 	def fadeInToDefaultBgColor(self):
@@ -106,17 +115,19 @@ class Widget(Gtk.Window):
 				if not line.endswith("]"):
 					stderr(configurationFile+", line "+str(lineCount)+": Syntax error: Expected ']' at the end of the line.\nSkipping...")
 					continue
-				receiver=line[1:-1]
-
 
 				#Add the last receiver to the window, because now there is a new one. The old one has finished its properties
 				if(lastReceiver!="Widget" and lastReceiver!=None):
-					self.grid.attach(self.pantoflaWidgetManager.receivers[lastReceiver].widget(), 0, self.YHeight, 1, 1)
-					self.YHeight+=1
-					#self.add(self.pantoflaWidgetManager.receivers[lastReceiver].widget())
+					self.grid.attach(self.pantoflaWidgetManager.receivers[lastReceiver].widget(), self.currentGridPosition[0], self.currentGridPosition[1], self.currentGridPosition[2], self.currentGridPosition[3])
+
+				receiver = line[1:-1]
 
 				#Add the new receiver to the list
 				if(receiver!="Widget"):
+					parts = receiver.split(',')
+					print parts
+					receiver=parts[0]
+					self.currentGridPosition=[int(parts[1]), int(parts[2]), int(parts[3]), int(parts[4])]
 					if receiver not in self.pantoflaWidgetManager.receivers:
 						for widget in self.pantoflaWidgetManager.widgets:
 							if receiver.startswith(widget.receiver):
@@ -185,6 +196,8 @@ class Widget(Gtk.Window):
 						size[1]=Defaults.widget.defaultScreen.get_height()/2
 
 					self.set_default_size(int(size[0]), int(size[1]))
+					self.set_size_request(int(size[0]), int(size[1]))
+					
 					sizeSet=True
 
 				elif(line.startswith("bgColor=")):
@@ -240,9 +253,9 @@ class Widget(Gtk.Window):
 						continue
 
 					if not isPercentage:
-						self.updateCss("border-radius: "+parts[1]+"px")
+						self.updateCss("border-radius: "+parts[1]+"px;")
 					else:
-						self.updateCss("border-radius: "+parts[1])
+						self.updateCss("border-radius: "+parts[1]+";")
 					
 				elif(line.startswith("updateInterval=")):
 					parts=line.split("=")
@@ -268,13 +281,13 @@ class Widget(Gtk.Window):
 
 		#Add the last receiver to the window. This is the last receiver as the file has ended
 		if(lastReceiver!="Widget" and lastReceiver!=None):
-			self.grid.attach(self.pantoflaWidgetManager.receivers[lastReceiver].widget(), 0, self.YHeight, 1, 1)
-			self.YHeight+=1
+			self.grid.attach(self.pantoflaWidgetManager.receivers[lastReceiver].widget(), self.currentGridPosition[0], self.currentGridPosition[1], self.currentGridPosition[2], self.currentGridPosition[3])
 
 		#Set the default values to the ones that have to be set
 
 		if not sizeSet:
 			self.set_default_size(Defaults.widget.defaultWidth, Defaults.widget.defaultHeight)
+			self.set_size_request(Defaults.widget.defaultWidth, Defaults.widget.defaultHeight)
 
 		if not positionSet:
 			self.move(Defaults.widget.defaultScreen.get_width()/2-self.get_size()[0]/2, Defaults.widget.defaultScreen.get_height()/2-self.get_size()[1]/2)
@@ -302,8 +315,13 @@ class Widget(Gtk.Window):
 
 	def updateCss(self, newCss):
 		self.currentCss.append(newCss)
+
+	def applyCss(self):
+		finalString = ''
+		for css in self.currentCss:
+			finalString+=css
 		self.styleProvider.load_from_data("""
 			#"""+self.name+""" {
-				"""+' '.join(self.currentCss)+"""
+				"""+finalString+"""
 			}
 		""")
