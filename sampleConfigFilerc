@@ -7,24 +7,41 @@ size=230,561
 position=780,108
 borderRadius = 3
 bgColor=0,0,0,0.9
-border=1, #FFFFFF
-[Clock1,0,0,12,1]
+border=1px solid rgba(255, 255, 255, 0.2)
+
+[Clock1,middle,3]
+#border=1px solid red
 format=%H : %M
 gmt = False
 color=255,255,255,1
 #bgColor=0,255,0,0.1
 font = Droid Sans 23
 #background-image = '/home/alex/36.png'
-[Clock2,0,1,12,2]
+
+[Clock2,middle,38]
+#border=1px solid green
 format=%A, %B %d
 gmt = False
 color=255,255,255,0.7
 font = Droid Sans 10
-[Label1,0,3,6,1]
-text='Hey there'
-font = Ubuntu 13
-color = 94,39,80,1
-[Label2,7,3,6,1]
-text='party people'
-font = Ubuntu 13
-color = 0,39,80,1
+
+[Weather1,middle, 61]
+size=228, 150
+upsize=228, 86
+city=Patra
+temp-pos=15, 0
+pressure-pos=180,5
+humidity-pos=178, 26
+speed-pos=192,47
+city-pos=15,60
+cityFont=Droid Sans 12
+cityColor=255,255,255,1
+tempFont=Droid Sans 35
+tempColor=255, 255, 255, 1
+statsFont = Droid Sans 8
+statsColor = 255,255,255,1
+background-image = '/home/alex/29.png'
+upperFrameBorder = 0
+upperFrameBorder-top = 1px solid rgba(255, 255, 255, 0.2)
+upperFrameBorder-bottom = 1px solid rgba(255, 255, 255, 0.2)
+border=0
