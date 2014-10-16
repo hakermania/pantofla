@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os, ConfigParser, sys, shutil, signal
-import Defaults.app, Widgets.widget, Widgets.WidgetManager
+import Defaults.app, Widgets.widget, Tools.WidgetManager
 
 from Tools.output import *
 
@@ -49,7 +49,7 @@ def main():
 				stderr("Could not create default configuration files. The application will now exit")
 				sys.exit(1)
 
-	widgetManager = Widgets.WidgetManager.WidgetManager()
+	widgetManager = Tools.WidgetManager.WidgetManager()
 
 	widgetCount=0
 

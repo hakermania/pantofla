@@ -1,43 +1,87 @@
 #!/usr/bin/env python
 
 from gi.repository import Gtk, Gdk
-from time import gmtime, strftime
+from time import strftime
 
 import Defaults.widget
 
 from Tools.output import *
 from Tools.simplemath import *
 
-receiver="Clock"
+receiver="Weather"
+
+units='C' #possible values 'C' or 'F'
 
 class Widget():
 	def __init__(self, name, parentName):
-		self.clockLabel=Gtk.Label()
 		self.name=parentName+name
 
-		self.clockLabelName=self.name+"clockLabel"
-		self.clockLabel.set_name(self.clockLabelName)
+		self.cityLabel=Gtk.Label()
+		self.cityLabelName=self.name+"cityLabel"
+		self.cityLabel.set_name(self.cityLabelName)
 
-		self.format=Defaults.widget.defaultClockFormat
-		self.gmt=Defaults.widget.defaultGmtClockValue
+		self.temperatureLabel=Gtk.Label()
+		self.temperatureLabelName=self.name+"temperatureLabel"
+		self.temperatureLabel.set_name(self.temperatureLabelName)
+
+		self.conditionLabel=Gtk.Label("LEL")
+		self.conditionLabelName=self.name+"conditionLabel"
+		self.conditionLabel.set_name(self.conditionLabelName)
+
+		self.pressureLabel=Gtk.Label()
+		self.pressureLabelName=self.name+"pressureLabel"
+		self.pressureLabel.set_name(self.pressureLabelName)
+
+		self.humidityLabel=Gtk.Label()
+		self.humidityLabelName=self.name+"humidityLabel"
+		self.humidityLabel.set_name(self.humidityLabelName)
+
+		self.speedLabel=Gtk.Label()
+		self.speedLabelName=self.name+"speedLabel"
+		self.speedLabel.set_name(self.speedLabelName)
+
+		self.d1Label=Gtk.Label()
+		self.d1LabelName=self.name+"d1Label"
+		self.d1Label.set_name(self.d1LabelName)
+
+		self.d2Label=Gtk.Label()
+		self.d2LabelName=self.name+"d2Label"
+		self.d2Label.set_name(self.d2LabelName)
+
+		self.d3Label=Gtk.Label()
+		self.d3LabelName=self.name+"d3Label"
+		self.d3Label.set_name(self.d3LabelName)
+
 		self.styleProvider=Gtk.CssProvider()
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 		self.currentCss={}
 
-		#self.clockLabel.set_hexpand(True)
-		self.alignment=Gtk.Alignment()
-		self.alignment.set(0.5, 0.1, 0, 0)
-		self.alignmentName = self.name+"Alignment"
-		self.alignment.set_name(self.alignmentName)
-		self.alignment.add(self.clockLabel)
+		# self.cityLabel.set_hexpand(True)
+		# self.alignment=Gtk.Alignment()
+		# self.alignment.set(0.5, 0.1, 0, 0)
+		# self.alignmentName = self.name+"Alignment"
+		# self.alignment.set_name(self.alignmentName)
+		# self.alignment.add(self.cityLabel)
+		self.grid=Gtk.Grid()
+
+		self.grid.attach(self.cityLabel, 0, 0, 1, 1)
+		self.grid.attach(self.temperatureLabel, 1, 0, 1, 1)
+		self.grid.attach(self.conditionLabel, 2, 0, 1, 1)
+		self.grid.attach(self.pressureLabel, 3, 0, 1, 1)
+		self.grid.attach(self.humidityLabel, 4, 0, 1, 1)
+		self.grid.attach(self.speedLabel, 5, 0, 1, 1)
+		self.grid.attach(self.d1Label, 6, 0, 1, 1)
+		self.grid.attach(self.d2Label, 7, 0, 1, 1)
+		self.grid.attach(self.d3Label, 8, 0, 1, 1)
+
 
 		self.frame = Gtk.Frame()
 		self.frameName = self.name+"Frame"
 		self.frame.set_name(self.frameName)
 		self.frame.set_shadow_type(Gtk.ShadowType(Gtk.ShadowType.NONE))
-		self.frame.add(self.alignment)
+		self.frame.add(self.grid)
 
-		self.cssClear = [ self.name, self.alignmentName, self.frameName ]
+		self.cssClear = [ self.name, self.frameName ]
 
 		self.frame.connect('destroy', self.destroyed)
 
@@ -46,24 +90,10 @@ class Widget():
 			self.styleProvider.load_from_data("#"+name+" { } ")
 
 	def update(self):
-		if(self.gmt):
-			self.clockLabel.set_text(strftime(self.format, gmtime()))
-		else:
-			self.clockLabel.set_text(strftime(self.format))
+		pass
 
 	def runCommand(self, command, lineCount, configurationFile):
-		if(command.startswith("format=")):
-			self.format=command[7:]
-		elif(command.startswith("gmt=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'gmt': Format: gmt = true/false.\nSkipping...")
-				return
-			if(parts[1]=="True"):
-				self.gmt=True
-			else:
-				self.gmt=False
-		elif(command.startswith("font=")):
+		if(command.startswith("font=")):
 			parts=command.split("=")
 			if(len(parts)>2):
 				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'font': Format: font = fontName size, N integer.\nSkipping...")
@@ -184,7 +214,7 @@ class Widget():
 
 	def updateCss(self, newCss, name=None):
 		if(name is None):
-			name=self.clockLabelName
+			name=self.name
 		if name not in self.currentCss:
 			self.currentCss[name]=[]
 		self.currentCss[name].append(newCss)

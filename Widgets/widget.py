@@ -2,7 +2,7 @@
 
 from gi.repository import GObject, Gtk, Gdk
 
-import Defaults.widget, Widgets.SubWidgetManager
+import Defaults.widget, Tools.SubWidgetManager
 
 from Tools.output import *
 from Tools.simplemath import *
@@ -27,7 +27,7 @@ class Widget(Gtk.Window):
 
 		self.rgbaVisual = self.get_screen().get_rgba_visual()
 
-		self.pantoflaWidgetManager = Widgets.SubWidgetManager.SubWidgetManager()
+		self.pantoflaWidgetManager = Tools.SubWidgetManager.SubWidgetManager()
 
 		self.styleProvider = Gtk.CssProvider()
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
@@ -35,8 +35,8 @@ class Widget(Gtk.Window):
 		self.currentCss=[]
 
 		self.grid = Gtk.Grid()
-		self.grid.set_row_spacing(3)
-		self.grid.set_column_spacing(3)
+		self.grid.set_row_spacing(0)
+		self.grid.set_column_spacing(0)
 		self.currentGridPosition = []
 
 		self.add(self.grid)
@@ -125,7 +125,6 @@ class Widget(Gtk.Window):
 				#Add the new receiver to the list
 				if(receiver!="Widget"):
 					parts = receiver.split(',')
-					print parts
 					receiver=parts[0]
 					self.currentGridPosition=[int(parts[1]), int(parts[2]), int(parts[3]), int(parts[4])]
 					if receiver not in self.pantoflaWidgetManager.receivers:
@@ -210,7 +209,7 @@ class Widget(Gtk.Window):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
 						continue
 
-					if(not representsInt(values[0]) or not representsInt(values[1]) or not representsInt(values[2]) or not representsFloat(values[3])):
+					if(not representsInts(values[:-1]) or not representsFloat(values[-1])):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
 						continue
 
@@ -224,16 +223,38 @@ class Widget(Gtk.Window):
 				elif(line.startswith("border=")):
 					parts=line.split("=")
 					if(len(parts)!=2):
-						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border': Format: border = width, #RRGGBB.\nSkipping...")
-						continue
+						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border': Format: border = px state color.\nSkipping...")
+						return
 
-					values=parts[1].split(",")
+					self.updateCss("border: "+parts[1]+";")
+				elif(line.startswith("border-top=")):
+					parts=line.split("=")
+					if(len(parts)!=2):
+						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-top': Format: border-top = px.\nSkipping...")
+						return
 
-					if(len(values)!=2 or not representsInt(values[0])):
-						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border': Format: border = width, #RRGGBB.\nSkipping...")
-						continue
+					self.updateCss("border-top: "+parts[1]+";")
+				elif(line.startswith("border-right=")):
+					parts=line.split("=")
+					if(len(parts)!=2):
+						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-right': Format: border-right = px.\nSkipping...")
+						return
 
-					self.updateCss("border: "+values[0]+"px solid "+values[1]+";")
+					self.updateCss("border-right: "+parts[1]+";")
+				elif(line.startswith("border-bottom=")):
+					parts=line.split("=")
+					if(len(parts)!=2):
+						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-bottom': Format: border-bottom = px.\nSkipping...")
+						return
+
+					self.updateCss("border-bottom: "+parts[1]+";")
+				elif(line.startswith("border-left=")):
+					parts=line.split("=")
+					if(len(parts)!=2):
+						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-left': Format: border-left = px.\nSkipping...")
+						return
+
+					self.updateCss("border-left: "+parts[1]+";")
 				elif(line.startswith("borderRadius=")):
 					parts=line.split("=")
 					if(len(parts)!=2):
@@ -283,6 +304,7 @@ class Widget(Gtk.Window):
 		if(lastReceiver!="Widget" and lastReceiver!=None):
 			self.grid.attach(self.pantoflaWidgetManager.receivers[lastReceiver].widget(), self.currentGridPosition[0], self.currentGridPosition[1], self.currentGridPosition[2], self.currentGridPosition[3])
 
+
 		#Set the default values to the ones that have to be set
 
 		if not sizeSet:
@@ -310,6 +332,8 @@ class Widget(Gtk.Window):
 		# 	self.grid.attach(Gtk.Label("Hello"+str(self.YHeight)), 0, self.YHeight, 1, 1)
 		# 	self.YHeight+=1
 		#TO REMOVE END
+
+		self.pantoflaWidgetManager.applyCssToWidgets()
 
 		self.pantoflaWidgetManager.startUpdating()
 

@@ -6,6 +6,10 @@ import os
 import Widgets.widget
 
 class WidgetManager():
+	"""
+	Manages the Widgets (or Gadgets) placed on the desktop.
+	Each Gadget can have many SubWidgets.
+	"""
 	def __init__(self):
 		self.widgets=[]
 
