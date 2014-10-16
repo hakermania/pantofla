@@ -11,7 +11,10 @@ from Tools.simplemath import *
 receiver="Clock"
 
 class Widget():
-	def __init__(self, name, parentName):
+	def __init__(self, name, parentName, parent):
+		self.parent=parent
+		self.hMid=False
+		self.vMid=False
 		self.clockLabel=Gtk.Label()
 		self.name=parentName+name
 
@@ -24,7 +27,7 @@ class Widget():
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 		self.currentCss={}
 
-		#self.clockLabel.set_hexpand(True)
+		self.clockLabel.set_hexpand(True)
 		self.alignment=Gtk.Alignment()
 		self.alignment.set(0.5, 0.1, 0, 0)
 		self.alignmentName = self.name+"Alignment"
@@ -40,6 +43,17 @@ class Widget():
 		self.cssClear = [ self.name, self.alignmentName, self.frameName ]
 
 		self.frame.connect('destroy', self.destroyed)
+		self.frame.connect('size-allocate', self.getSize)
+
+	def getSize(self, widget, allocation):
+		self.width=allocation.width
+		self.height=allocation.height
+		if(self.hMid):
+			self.x=(self.parent.width - self.width)/2.0
+		if(self.vMid):
+			self.y=(self.parent.height - self.height)/2.0
+		if(self.hMid or self.vMid):
+			self.parent.fixed.move(self.frame, self.x, self.y)
 
 	def destroyed(self, widget):
 		for name in self.cssClear:
@@ -66,7 +80,7 @@ class Widget():
 		elif(command.startswith("font=")):
 			parts=command.split("=")
 			if(len(parts)>2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'font': Format: font = fontName size, N integer.\nSkipping...")
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'font': Format: font = font size.\nSkipping...")
 				return
 
 			self.updateCss("font: "+parts[1]+";")
@@ -93,35 +107,35 @@ class Widget():
 		elif(command.startswith("border-top=")):
 			parts=command.split("=")
 			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-top': Format: border-top = px.\nSkipping...")
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-top': Format: border-top = px state color.\nSkipping...")
 				return
 
 			self.updateCss("border-top: "+parts[1]+";")
 		elif(command.startswith("border-right=")):
 			parts=command.split("=")
 			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-right': Format: border-right = px.\nSkipping...")
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-right': Format: border-right = px state color.\nSkipping...")
 				return
 
 			self.updateCss("border-right: "+parts[1]+";")
 		elif(command.startswith("border-bottom=")):
 			parts=command.split("=")
 			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-bottom': Format: border-bottom = px.\nSkipping...")
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-bottom': Format: border-bottom = px state color.\nSkipping...")
 				return
 
 			self.updateCss("border-bottom: "+parts[1]+";")
 		elif(command.startswith("border-left=")):
 			parts=command.split("=")
 			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-left': Format: border-left = px.\nSkipping...")
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-left': Format: border-left = px state color.\nSkipping...")
 				return
 
 			self.updateCss("border-left: "+parts[1]+";")
 		elif(command.startswith("padding=")):
 			parts=command.split("=")
 			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'padding': Format: padding = px state color.\nSkipping...")
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'padding': Format: padding = px.\nSkipping...")
 				return
 
 			self.updateCss("padding: "+parts[1]+";")
@@ -192,9 +206,13 @@ class Widget():
 	def applyCss(self):
 		finalString=''
 		for name in self.currentCss:
-			finalString+="#"+name+" { "+' '.join(self.currentCss[name])+" } "
-		print finalString
-		self.styleProvider.load_from_data(finalString)
+			if(len(self.currentCss[name])>0):
+				finalString+="#"+name+" { "+' '.join(self.currentCss[name])+" } "
+		if(finalString!=''):
+			self.styleProvider.load_from_data(finalString)
+
+	def initial(self):
+		self.applyCss()
 
 	def widget(self):
 		return self.frame

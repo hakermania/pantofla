@@ -35,4 +35,4 @@ class SubWidgetManager():
 
 	def applyCssToWidgets(self):
 		for widgetName in self.receivers:
-			self.receivers[widgetName].applyCss()
+			self.receivers[widgetName].initial()

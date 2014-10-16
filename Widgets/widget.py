@@ -34,14 +34,15 @@ class Widget(Gtk.Window):
 
 		self.currentCss=[]
 
-		self.grid = Gtk.Grid()
-		self.grid.set_row_spacing(0)
-		self.grid.set_column_spacing(0)
-		self.currentGridPosition = []
+		self.fixed = Gtk.Fixed()
+		self.fixed.set_name(self.name+"Fixed")
+		self.currentPosition=[]
 
-		self.add(self.grid)
+		self.add(self.fixed)
 
 		self.applyConfigurationFile(configurationFile, fadeIn)
+
+		self.updateCss("padding: 100px;")
 
 		self.set_resizable(False)
 
@@ -70,12 +71,28 @@ class Widget(Gtk.Window):
 			self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(self.finalBgColor[0], self.finalBgColor[1], self.finalBgColor[2], self.finalBgColor[3]))
 			return False;
 
+	def putReceiverToWidget(self, receiver):
+		x, y = 0, 0
+		if(not representsInt(self.currentPosition[0])):
+			self.pantoflaWidgetManager.receivers[receiver].hMid=True
+			x=0
+		else:
+			x=self.currentPosition[0]
+		if(not representsInt(self.currentPosition[1])):
+			self.pantoflaWidgetManager.receivers[receiver].vMid=True
+			y=0
+		else:
+			y=self.currentPosition[1]
+		self.pantoflaWidgetManager.receivers[receiver].x=x
+		self.pantoflaWidgetManager.receivers[receiver].y=y
+		self.fixed.put(self.pantoflaWidgetManager.receivers[receiver].widget(), x, y)
+
 	def commandForReceiver(self, receiver, command, lineCount, configurationFile):
 		"""Sends the command (property) to the appropriate widget (receiver)"""
 		if receiver not in self.pantoflaWidgetManager.receivers:
 			for widget in self.pantoflaWidgetManager.widgets:
 				if receiver.startswith(widget.receiver):
-					self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name)
+					self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name, self)
 					self.pantoflaWidgetManager.receivers[receiver].runCommand(command, lineCount, configurationFile)
 					break
 		else:
@@ -118,19 +135,35 @@ class Widget(Gtk.Window):
 
 				#Add the last receiver to the window, because now there is a new one. The old one has finished its properties
 				if(lastReceiver!="Widget" and lastReceiver!=None):
-					self.grid.attach(self.pantoflaWidgetManager.receivers[lastReceiver].widget(), self.currentGridPosition[0], self.currentGridPosition[1], self.currentGridPosition[2], self.currentGridPosition[3])
+					self.putReceiverToWidget(lastReceiver)
 
 				receiver = line[1:-1]
 
 				#Add the new receiver to the list
 				if(receiver!="Widget"):
 					parts = receiver.split(',')
+					if(len(parts)!=3):
+						stderr(configurationFile+", line "+str(lineCount)+": Syntax error: Expected widget name, position x, position y for the widget initialization.\nSkipping...")
+						continue
 					receiver=parts[0]
-					self.currentGridPosition=[int(parts[1]), int(parts[2]), int(parts[3]), int(parts[4])]
+					if(not representsInt(parts[1])):
+						if(parts[1]!="middle"):
+							stderr(configurationFile+", line "+str(lineCount)+": Syntax error: Expected widget name, position x, position y for the widget initialization.\nSkipping...")
+							continue
+					else:
+						parts[1]=int(parts[1])
+					if(not representsInt(parts[2])):
+						if(parts[2]!="middle"):
+							stderr(configurationFile+", line "+str(lineCount)+": Syntax error: Expected widget name, position x, position y for the widget initialization.\nSkipping...")
+							continue
+					else:
+						parts[2]=int(parts[2])
+
+					self.currentPosition=[parts[1], parts[2]]
 					if receiver not in self.pantoflaWidgetManager.receivers:
 						for widget in self.pantoflaWidgetManager.widgets:
 							if receiver.startswith(widget.receiver):
-								self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name)
+								self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name, self)
 								lastReceiver=receiver
 								break
 
@@ -194,8 +227,11 @@ class Widget(Gtk.Window):
 					if(size[1]=="half"):
 						size[1]=Defaults.widget.defaultScreen.get_height()/2
 
-					self.set_default_size(int(size[0]), int(size[1]))
-					self.set_size_request(int(size[0]), int(size[1]))
+					self.width = int(size[0])
+					self.height = int(size[1])
+
+					self.set_default_size(self.width, self.height)
+					self.set_size_request(self.width, self.height)
 					
 					sizeSet=True
 
@@ -302,12 +338,13 @@ class Widget(Gtk.Window):
 
 		#Add the last receiver to the window. This is the last receiver as the file has ended
 		if(lastReceiver!="Widget" and lastReceiver!=None):
-			self.grid.attach(self.pantoflaWidgetManager.receivers[lastReceiver].widget(), self.currentGridPosition[0], self.currentGridPosition[1], self.currentGridPosition[2], self.currentGridPosition[3])
-
+			self.putReceiverToWidget(lastReceiver)
 
 		#Set the default values to the ones that have to be set
 
 		if not sizeSet:
+			self.width = Defaults.widget.defaultWidth
+			self.height = Defaults.widget.defaultHeight
 			self.set_default_size(Defaults.widget.defaultWidth, Defaults.widget.defaultHeight)
 			self.set_size_request(Defaults.widget.defaultWidth, Defaults.widget.defaultHeight)
 
@@ -325,11 +362,11 @@ class Widget(Gtk.Window):
 
 		#TO REMOVE START
 		# self.YHeight=0
-		# for child in self.grid:
-		# 	self.grid.remove(child)
+		# for child in self.fixed:
+		# 	self.fixed.remove(child)
 		# 	self.pantoflaWidgetManager.receivers={}
 		# 	print "PERNAW1"
-		# 	self.grid.attach(Gtk.Label("Hello"+str(self.YHeight)), 0, self.YHeight, 1, 1)
+		# 	self.fixed.attach(Gtk.Label("Hello"+str(self.YHeight)), 0, self.YHeight, 1, 1)
 		# 	self.YHeight+=1
 		#TO REMOVE END
 
@@ -341,7 +378,7 @@ class Widget(Gtk.Window):
 		self.currentCss.append(newCss)
 
 	def applyCss(self):
-		finalString = ''
+		finalString=''
 		for css in self.currentCss:
 			finalString+=css
 		self.styleProvider.load_from_data("""
