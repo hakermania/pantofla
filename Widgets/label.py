@@ -60,11 +60,11 @@ class Widget():
 		pass
 
 	def runCommand(self, command, lineCount, configurationFile):
+		parts=command.split("=")
+		if(len(parts)!=2):
+			stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command.\nSkipping...")
+			return
 		if(command.startswith("text=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'text': Format: text = 'text'.\nSkipping...")
-				return
 			if(not (parts[1].startswith("'") and parts[1].endswith("'"))):
 				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'text': Format: text = 'text'.\nSkipping...")
 				return
@@ -73,17 +73,8 @@ class Widget():
 
 			self.label.set_text(self.text)
 		elif(command.startswith("font=")):
-			parts=command.split("=")
-			if(len(parts)>2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'font': Format: font = font size.\nSkipping...")
-				return
-
 			self.updateCss("font: "+parts[1]+";")
 		elif(command.startswith("color=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'color': Format: color = R,G,B,A.\nSkipping...")
-				return
 			values=parts[1].split(",")
 			if(len(values)!=4):
 				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'color': Format: color = R,G,B,A.\nSkipping...")
@@ -93,80 +84,26 @@ class Widget():
 				return
 			self.updateCss("color: rgba("+values[0]+","+values[1]+","+values[2]+","+values[3]+");")
 		elif(command.startswith("border=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border': Format: border = px state color.\nSkipping...")
-				return
-
 			self.updateCss("border: "+parts[1]+";")
 		elif(command.startswith("border-top=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-top': Format: border-top = px state color.\nSkipping...")
-				return
-
 			self.updateCss("border-top: "+parts[1]+";")
 		elif(command.startswith("border-right=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-right': Format: border-right = px state color.\nSkipping...")
-				return
-
 			self.updateCss("border-right: "+parts[1]+";")
 		elif(command.startswith("border-bottom=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-bottom': Format: border-bottom = px state color.\nSkipping...")
-				return
-
 			self.updateCss("border-bottom: "+parts[1]+";")
 		elif(command.startswith("border-left=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-left': Format: border-left = px state color.\nSkipping...")
-				return
-
 			self.updateCss("border-left: "+parts[1]+";")
 		elif(command.startswith("padding=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'padding': Format: padding = px state color.\nSkipping...")
-				return
-
 			self.updateCss("padding: "+parts[1]+";")
 		elif(command.startswith("padding-top=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'padding-top': Format: padding-top = px.\nSkipping...")
-				return
-
 			self.updateCss("padding-top: "+parts[1]+";")
 		elif(command.startswith("padding-right=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'padding-right': Format: padding-right = px.\nSkipping...")
-				return
-
 			self.updateCss("padding-right: "+parts[1]+";")
 		elif(command.startswith("padding-bottom=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'padding-bottom': Format: padding-bottom = px.\nSkipping...")
-				return
-
 			self.updateCss("padding-bottom: "+parts[1]+";")
 		elif(command.startswith("padding-left=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'padding-left': Format: padding-left = px.\nSkipping...")
-				return
-
 			self.updateCss("padding-left: "+parts[1]+";")
 		elif(command.startswith("bgColor=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
-				return
 			values=parts[1].split(",")
 			if(len(values)!=4):
 				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
@@ -178,11 +115,6 @@ class Widget():
 
 			self.updateCss("background-color: rgba("+values[0]+","+values[1]+","+values[2]+","+values[3]+");", self.frameName)
 		elif(command.startswith("background-image=")):
-			parts=command.split("=")
-			if(len(parts)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'background-image': Format: background-image = 'path'.\nSkipping...")
-				return
-
 			if(not (parts[1].startswith("'") and parts[1].endswith("'"))):
 				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'background-image': Format: background-image = 'path'.\nSkipping...")
 				return

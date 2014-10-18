@@ -25,14 +25,15 @@ gmt = False
 color=255,255,255,0.7
 font = Droid Sans 10
 
-[Weather1,middle, 61]
+[Weather1,1, 61]
 size=228, 150
 upsize=228, 86
+unit=c
 city=Patra
 temp-pos=15, 0
-pressure-pos=180,5
-humidity-pos=178, 26
-speed-pos=192,47
+pressure-pos=198,5
+humidity-pos=198, 26
+speed-pos=198,47
 city-pos=15,60
 cityFont=Droid Sans 12
 cityColor=255,255,255,1

@@ -51,8 +51,6 @@ class Widget(Gtk.Window):
 		if fadeIn:
 			self.fadeInToDefaultBgColor()
 
-		self.show_all()
-
 	def fadeInToDefaultBgColor(self):
 		self.currentBgColor = [self.finalBgColor[0], self.finalBgColor[1], self.finalBgColor[2], 0.0]
 		self.fadeInStepValue = self.finalBgColor[3]/100.0
@@ -370,7 +368,9 @@ class Widget(Gtk.Window):
 		# 	self.YHeight+=1
 		#TO REMOVE END
 
-		self.pantoflaWidgetManager.applyCssToWidgets()
+		self.show_all()
+
+		self.pantoflaWidgetManager.callWidgetsInitial()
 
 		self.pantoflaWidgetManager.startUpdating()
 

@@ -33,6 +33,6 @@ class SubWidgetManager():
 			self.receivers[widgetName].update()
 		return True
 
-	def applyCssToWidgets(self):
+	def callWidgetsInitial(self):
 		for widgetName in self.receivers:
 			self.receivers[widgetName].initial()
