@@ -9,7 +9,7 @@ from Tools.simplemath import *
 
 class Widget(Gtk.Window):
 
-	def __init__(self, name, configurationFile, fadeIn):
+	def __init__(self, name, configurationFile):
 		Gtk.Window.__init__(self,
 			accept_focus=False, skip_pager_hint=True,
 			skip_taskbar_hint=True, decorated=False,
@@ -40,34 +40,13 @@ class Widget(Gtk.Window):
 
 		self.add(self.fixed)
 
-		self.applyConfigurationFile(configurationFile, fadeIn)
+		self.applyConfigurationFile(configurationFile)
 
 		self.updateCss("padding: 100px;")
 
 		self.set_resizable(False)
 
 		self.applyCss()
-
-		if fadeIn:
-			self.fadeInToDefaultBgColor()
-
-	def fadeInToDefaultBgColor(self):
-		self.currentBgColor = [self.finalBgColor[0], self.finalBgColor[1], self.finalBgColor[2], 0.0]
-		self.fadeInStepValue = self.finalBgColor[3]/100.0
-		self.fadeInWidget()
-		GObject.timeout_add(Defaults.widget.defaultFadeInTime/100.0, self.fadeInWidget)
-		
-
-	def fadeInWidget(self):
-		self.set_visual(self.rgbaVisual)
-		if(self.currentBgColor[3]+self.fadeInStepValue < self.finalBgColor[3]):
-			self.currentBgColor[3]+=self.fadeInStepValue
-			self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(self.currentBgColor[0], self.currentBgColor[1], self.currentBgColor[2], self.currentBgColor[3]))
-			return True
-		else:
-			toReturn=False
-			self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(self.finalBgColor[0], self.finalBgColor[1], self.finalBgColor[2], self.finalBgColor[3]))
-			return False;
 
 	def putReceiverToWidget(self, receiver):
 		x, y = 0, 0
@@ -87,16 +66,19 @@ class Widget(Gtk.Window):
 
 	def commandForReceiver(self, receiver, command, lineCount, configurationFile):
 		"""Sends the command (property) to the appropriate widget (receiver)"""
+		parts=command.split("=")
+		key=parts[0]
+		value=command[len(key)+1:]
 		if receiver not in self.pantoflaWidgetManager.receivers:
 			for widget in self.pantoflaWidgetManager.widgets:
 				if receiver.startswith(widget.receiver):
 					self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name, self)
-					self.pantoflaWidgetManager.receivers[receiver].runCommand(command, lineCount, configurationFile)
+					self.pantoflaWidgetManager.receivers[receiver].runCommand(key, value, lineCount, configurationFile)
 					break
 		else:
-			self.pantoflaWidgetManager.receivers[receiver].runCommand(command, lineCount, configurationFile)
+			self.pantoflaWidgetManager.receivers[receiver].runCommand(key, value, lineCount, configurationFile)
 
-	def applyConfigurationFile(self, configurationFile, fadeIn):
+	def applyConfigurationFile(self, configurationFile):
 		try:
 			f = open(configurationFile, 'r')
 		except:
@@ -113,21 +95,21 @@ class Widget(Gtk.Window):
 		backgroundColorSet=False
 		updateIntervalSet=False
 
-		for line in f:
+		for command in f:
 			lineCount+=1
 
-			if(line.startswith("#")):
+			if(command.startswith("#")):
 				continue #Line starts with '#', so it is a comment
 
-			line=line.rstrip()
-			line=line.lstrip()
+			command=command.rstrip()
+			command=command.lstrip()
 
-			if(line==""):
+			if(command==""):
 				continue
 
-			if(line.startswith("[")):
+			if(command.startswith("[")):
 				#New receiver
-				if not line.endswith("]"):
+				if not command.endswith("]"):
 					stderr(configurationFile+", line "+str(lineCount)+": Syntax error: Expected ']' at the end of the line.\nSkipping...")
 					continue
 
@@ -135,7 +117,7 @@ class Widget(Gtk.Window):
 				if(lastReceiver!="Widget" and lastReceiver!=None):
 					self.putReceiverToWidget(lastReceiver)
 
-				receiver = line[1:-1]
+				receiver = command[1:-1]
 
 				#Add the new receiver to the list
 				if(receiver!="Widget"):
@@ -168,16 +150,16 @@ class Widget(Gtk.Window):
 				continue
 
 			#Remove the spaces between the property and the value
-			if('=' in line):
-				parts=line.split("=")
+			if('=' in command):
+				parts=command.split("=")
 				if(len(parts)>=2):
 					parts[0]=parts[0].rstrip()
 					parts[0]=parts[0].lstrip()
 					parts[1]=parts[1].lstrip()
-					line=parts[0]+'='+parts[1]
+					command=parts[0]+'='+parts[1]
 					if(len(parts)>2):
 						for i in range(2, len(parts)):
-							line+='='+parts[i]
+							command+='='+parts[i]
 
 			if(receiver==None):
 				stderr(configurationFile+", line "+str(lineCount)+": Unexpected command: I do not know the receiver of '"+line+"'.\nSkipping...")
@@ -185,8 +167,8 @@ class Widget(Gtk.Window):
 
 			if(receiver=="Widget"):
 				#The special receiver Widget
-				if(line.startswith("position=")):
-					parts=line.split("=")
+				if(command.startswith("position=")):
+					parts=command.split("=")
 					if(len(parts)!=2):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'position': Format: position = x,y.\nSkipping...")
 						continue
@@ -206,8 +188,8 @@ class Widget(Gtk.Window):
 					self.move(int(coords[0]), int(coords[1]))
 					positionSet=True
 
-				elif(line.startswith("size=")):
-					parts=line.split("=")
+				elif(command.startswith("size=")):
+					parts=command.split("=")
 					if(len(parts)!=2):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'size': Format: size = w,h.\nSkipping...")
 						continue
@@ -233,8 +215,8 @@ class Widget(Gtk.Window):
 					
 					sizeSet=True
 
-				elif(line.startswith("bgColor=")):
-					parts=line.split("=")
+				elif(command.startswith("bgColor=")):
+					parts=command.split("=")
 					if(len(parts)!=2):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
 						continue
@@ -247,50 +229,47 @@ class Widget(Gtk.Window):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
 						continue
 
-					if fadeIn:
-						self.finalBgColor = [int(values[0]), int(values[1]), int(values[2]), float(values[3])]
-					else:
-						self.set_visual(self.rgbaVisual)
-						self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(int(values[0]), int(values[1]), int(values[2]), float(values[3])))
+					self.set_visual(self.rgbaVisual)
+					self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(int(values[0]), int(values[1]), int(values[2]), float(values[3])))
 
 					backgroundColorSet=True
-				elif(line.startswith("border=")):
-					parts=line.split("=")
+				elif(command.startswith("border=")):
+					parts=command.split("=")
 					if(len(parts)!=2):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border': Format: border = px state color.\nSkipping...")
 						return
 
 					self.updateCss("border: "+parts[1]+";")
-				elif(line.startswith("border-top=")):
-					parts=line.split("=")
+				elif(command.startswith("border-top=")):
+					parts=command.split("=")
 					if(len(parts)!=2):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-top': Format: border-top = px.\nSkipping...")
 						return
 
 					self.updateCss("border-top: "+parts[1]+";")
-				elif(line.startswith("border-right=")):
-					parts=line.split("=")
+				elif(command.startswith("border-right=")):
+					parts=command.split("=")
 					if(len(parts)!=2):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-right': Format: border-right = px.\nSkipping...")
 						return
 
 					self.updateCss("border-right: "+parts[1]+";")
-				elif(line.startswith("border-bottom=")):
-					parts=line.split("=")
+				elif(command.startswith("border-bottom=")):
+					parts=command.split("=")
 					if(len(parts)!=2):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-bottom': Format: border-bottom = px.\nSkipping...")
 						return
 
 					self.updateCss("border-bottom: "+parts[1]+";")
-				elif(line.startswith("border-left=")):
-					parts=line.split("=")
+				elif(command.startswith("border-left=")):
+					parts=command.split("=")
 					if(len(parts)!=2):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'border-left': Format: border-left = px.\nSkipping...")
 						return
 
 					self.updateCss("border-left: "+parts[1]+";")
-				elif(line.startswith("borderRadius=")):
-					parts=line.split("=")
+				elif(command.startswith("borderRadius=")):
+					parts=command.split("=")
 					if(len(parts)!=2):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'borderRadius': Format: borderRadius = pixels/percentage.\nSkipping...")
 						continue
@@ -312,8 +291,8 @@ class Widget(Gtk.Window):
 					else:
 						self.updateCss("border-radius: "+parts[1]+";")
 					
-				elif(line.startswith("updateInterval=")):
-					parts=line.split("=")
+				elif(command.startswith("updateInterval=")):
+					parts=command.split("=")
 					if(len(parts)!=2):
 						stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'updateInterval': Format: updateInterval = ms.\nSkipping...")
 						continue
@@ -330,7 +309,7 @@ class Widget(Gtk.Window):
 					stderr(configurationFile+", line "+str(lineCount)+": Unknown command '"+line+"'")
 			else:
 				#The receiver is not 'Widget'
-				self.commandForReceiver(receiver, line, lineCount, configurationFile)
+				self.commandForReceiver(receiver, command, lineCount, configurationFile)
 
 		f.close()
 
@@ -350,11 +329,8 @@ class Widget(Gtk.Window):
 			self.move(Defaults.widget.defaultScreen.get_width()/2-self.get_size()[0]/2, Defaults.widget.defaultScreen.get_height()/2-self.get_size()[1]/2)
 
 		if not backgroundColorSet:
-			if fadeIn:
-				self.finalBgColor = Defaults.widget.defaultBgColor
-			else:
-				self.set_visual(self.rgbaVisual)
-				self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(Defaults.widget.defaultBgColor[0], Defaults.widget.defaultBgColor[1], Defaults.widget.defaultBgColor[2], Defaults.widget.defaultBgColor[3]))
+			self.set_visual(self.rgbaVisual)
+			self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(Defaults.widget.defaultBgColor[0], Defaults.widget.defaultBgColor[1], Defaults.widget.defaultBgColor[2], Defaults.widget.defaultBgColor[3]))
 		if not updateIntervalSet:
 			self.pantoflaWidgetManager.setUpdateInterval(1000)
 
@@ -367,11 +343,23 @@ class Widget(Gtk.Window):
 		# 	self.fixed.attach(Gtk.Label("Hello"+str(self.YHeight)), 0, self.YHeight, 1, 1)
 		# 	self.YHeight+=1
 		#TO REMOVE END
+		GObject.timeout_add(1000, self.checkWidgetsReady)
+		
+	def checkWidgetsReady(self):
+		atLeastOneNotReady=False
+		for receiver in self.pantoflaWidgetManager.receivers:
+			if(not self.pantoflaWidgetManager.receivers[receiver].readyShow):
+				atLeastOneNotReady=True
+				self.pantoflaWidgetManager.receivers[receiver].update()
+		if atLeastOneNotReady:
+			return True #call again until ready
+		else:
+			self.endOperations()
+			return False #all widgets ready
 
+	def endOperations(self):
 		self.show_all()
-
 		self.pantoflaWidgetManager.callWidgetsInitial()
-
 		self.pantoflaWidgetManager.startUpdating()
 
 	def updateCss(self, newCss):

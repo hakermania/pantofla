@@ -43,5 +43,5 @@ class WidgetManager():
 			for i in reversed(toRemoveIndexes):
 				counter-=1
 				self.widgets.pop(i)
-				self.add(Widgets.widget.Widget(removedConfs[counter]["name"], removedConfs[counter]["config"], False), removedConfs[counter]["config"])
+				self.add(Widgets.widget.Widget(removedConfs[counter]["name"], removedConfs[counter]["config"]), removedConfs[counter]["config"])
 		return True
