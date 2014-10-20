@@ -234,7 +234,8 @@ class Widget():
 			self.styleProvider.load_from_data("#"+name+" { } ")
 
 	def getWeather(self):
-		#return [] #todo remove
+		self.readyShow=True #todo remove
+		return []  #todo remove
 		try:
 			baseurl = "https://query.yahooapis.com/v1/public/yql?"
 			yql_query = "select * from weather.forecast where woeid in (select woeid from geo.places(1) where text='"+self.cityName+"') and u='"+self.unit+"'"
@@ -294,7 +295,8 @@ class Widget():
 		except Exception as e:
 			#something went wrong, try again in 2 minutes
 			print e
-		self.lastUpdateTime=time()-180
+			self.lastUpdateTime=time()-180
+			return False
 		
 		self.readyShow=True
 

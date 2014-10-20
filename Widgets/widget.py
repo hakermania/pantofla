@@ -343,24 +343,25 @@ class Widget(Gtk.Window):
 		# 	self.fixed.attach(Gtk.Label("Hello"+str(self.YHeight)), 0, self.YHeight, 1, 1)
 		# 	self.YHeight+=1
 		#TO REMOVE END
+		self.show_all()
+		self.hide()
+		self.pantoflaWidgetManager.callWidgetsInitial()
+		self.pantoflaWidgetManager.startUpdating()
+
 		GObject.timeout_add(1000, self.checkWidgetsReady)
-		
+		self.checkWidgetsReady()
+		#self.endOperations()
+
 	def checkWidgetsReady(self):
 		atLeastOneNotReady=False
 		for receiver in self.pantoflaWidgetManager.receivers:
 			if(not self.pantoflaWidgetManager.receivers[receiver].readyShow):
 				atLeastOneNotReady=True
-				self.pantoflaWidgetManager.receivers[receiver].update()
 		if atLeastOneNotReady:
 			return True #call again until ready
 		else:
-			self.endOperations()
+			self.show()
 			return False #all widgets ready
-
-	def endOperations(self):
-		self.show_all()
-		self.pantoflaWidgetManager.callWidgetsInitial()
-		self.pantoflaWidgetManager.startUpdating()
 
 	def updateCss(self, newCss):
 		self.currentCss.append(newCss)
