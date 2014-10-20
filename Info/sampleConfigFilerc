@@ -15,7 +15,7 @@ format=%H : %M
 gmt = False
 color=255,255,255,1
 #bgColor=0,255,0,0.1
-font = Droid Sans 23
+font = Droid Sans 26
 #background-image = '/home/alex/36.png'
 
 [Clock2,middle,38]
@@ -35,14 +35,47 @@ pressure-pos=198,5
 humidity-pos=198, 26
 speed-pos=198,47
 city-pos=15,60
-cityFont=Droid Sans 12
-cityColor=255,255,255,1
-tempFont=Droid Sans 35
-tempColor=255, 255, 255, 1
-statsFont = Droid Sans 8
-statsColor = 255,255,255,1
+city-font=Droid Sans 12
+city-color=255,255,255,1
+temp-font=Droid Sans 35
+temp-color=255, 255, 255, 1
+stats-font = Droid Sans 8
+stats-color = 255,255,255,1
 background-image = '/home/alex/29.png'
 upperFrameBorder = 0
 upperFrameBorder-top = 1px solid rgba(255, 255, 255, 0.2)
 upperFrameBorder-bottom = 1px solid rgba(255, 255, 255, 0.2)
 border=0
+days-font=Lucida Console 8
+days-color = 255, 255, 255, 1
+sep1-pos=76, 94
+sep1-color = rgba(255,255,255,0.15)
+sep1-length = 76
+sep2-pos=152, 94
+sep2-color = rgba(255,255,255,0.15)
+sep2-length = 76
+day0Range-pos = 22, 44
+day0Range-font = Droid Sans 8
+day0Range-color = rgba(255,255,255,1)
+day1Range-font = Droid Sans 8
+day1Range-color = rgba(255,255,255,1)
+day2Range-font = Droid Sans 8
+day2Range-color = rgba(255,255,255,1)
+day3Range-font = Droid Sans 8
+day3Range-color = rgba(255,255,255,1)
+
+[HSeparator1, 7, 239]
+length=214
+color=rgba(255,255,255,0.15)
+
+[HSeparator2, 7, 338]
+length=214
+color=rgba(255,255,255,0.15)
+
+[Graph1, 20, 274]
+size=79,26
+color = rgba(255, 255, 255, 1)
+background-color = rgba(255, 0, 255, 0)
+point-width=1
+show-x=1
+function=networkUp
