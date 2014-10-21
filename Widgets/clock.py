@@ -39,7 +39,7 @@ class Widget():
 		self.frame.set_shadow_type(Gtk.ShadowType(Gtk.ShadowType.NONE))
 		self.frame.add(self.alignment)
 
-		self.cssClear = [ self.name, self.alignmentName, self.frameName ]
+		self.cssClear = [ self.name, self.clockLabelName, self.alignmentName, self.frameName ]
 
 		self.frame.connect('destroy', self.destroyed)
 		self.frame.connect('size-allocate', self.getSize)

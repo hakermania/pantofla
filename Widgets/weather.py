@@ -234,8 +234,8 @@ class Widget():
 			self.styleProvider.load_from_data("#"+name+" { } ")
 
 	def getWeather(self):
-		self.readyShow=True #todo remove
-		return []  #todo remove
+		# self.readyShow=True #todo remove
+		# return []  #todo remove
 		try:
 			baseurl = "https://query.yahooapis.com/v1/public/yql?"
 			yql_query = "select * from weather.forecast where woeid in (select woeid from geo.places(1) where text='"+self.cityName+"') and u='"+self.unit+"'"
@@ -261,7 +261,6 @@ class Widget():
 			conditionsImage=home+"/.pantofla/Weather/Conditions/"+data['item']['condition']['code']+".png"
 			if(isfile(conditionsImage)):
 				self.updateCss("background-image", "url('"+conditionsImage+"')", self.upperFrameName)
-				self.updateCss("background-position", "0px -7px", self.upperFrameName)
 				self.applyCss()
 			else:
 				print conditionsImage, "does not exist!"
@@ -474,7 +473,6 @@ class Widget():
 				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'background-image': Format: background-image = 'path'.\nSkipping...")
 				return
 			self.updateCss("background-image", "url("+value+")", self.upperFrameName)
-			self.updateCss("background-position", "0px -7px", self.upperFrameName)
 		elif(key=="font"):
 			self.updateCss("font", value)
 		elif(key=="temp-font"):

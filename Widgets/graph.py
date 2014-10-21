@@ -3,7 +3,8 @@ receiver="Graph"
 
 from gi.repository import Gtk, Gdk, GdkX11
 from Tools.output import *
-import math, random
+from multiprocessing.pool import ThreadPool
+import math
 
 class Widget():
 	def __init__(self, name, parentName, parent):
@@ -25,8 +26,6 @@ class Widget():
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 		self.currentCss={}
 
-		self.cssClear = [ self.drawingAreaName ]
-
 		self.updateCss("background-color", "rgba(255, 255, 0, 1)")
 
 		self.color = { "r" : 1.0, "g" : 1.0, "b" : 1.0, "a" : 1.0 }
@@ -34,16 +33,40 @@ class Widget():
 		self.pointWidth=1
 
 		self.showAxisX=True
+		self.normalize=True
+
+		self.normalizeFactor=0.5
+
+		self.valueLabel=0
 
 		self.values = [ ]
 		self.maxValue=0
 
 		self.function=self.emptyFunction #the function to show
+		self.niceFunction=self.emptyFunction
 
-		self.drawingArea.connect('destroy', self.destroyed)
+		self.fixed=Gtk.Fixed()
+		self.fixedName=self.name+"Fixed"
+		self.fixed.set_name(self.fixedName)
+		self.fixed.put(self.drawingArea, 0, 0)
+
+		self.frame=Gtk.Frame()
+		self.frameName=self.name+"Frame"
+		self.frame.set_name(self.frameName)
+		self.frame.set_shadow_type(Gtk.ShadowType(Gtk.ShadowType.NONE))
+
+		self.frame.add(self.fixed)
+
+		self.frame.connect('destroy', self.destroyed)
 		self.drawingArea.connect('size-allocate', self.getSize)
 		self.drawingArea.connect('draw', self.draw)
+
+		self.cssClear = [ self.name, self.fixedName, self.frameName, self.drawingAreaName ]
+
 		self.readyShow=True
+		self.functionData = None
+		self.function = None
+		self.pool = ThreadPool(processes=1)
 
 	def destroyed(self, widget):
 		for name in self.cssClear:
@@ -58,22 +81,48 @@ class Widget():
 			if(self.maxValue==0):
 				height=0
 			else:
-				height=(self.values[i]*(self.height-1)*1.0/self.maxValue)
-			cr.rectangle(self.width-self.pointWidth*(valuesN-i), self.height-height, self.pointWidth, self.height)
+				height=(self.values[i]*self.height*1.0/self.maxValue)
+			if not self.showAxisX:
+				cr.rectangle(self.width-self.pointWidth*(valuesN-i), self.height-height, self.pointWidth, self.height)
+			else:
+				cr.rectangle(self.width-self.pointWidth*(valuesN-i), self.height-height-1, self.pointWidth, self.height)
 		if(self.showAxisX):
 			cr.rectangle(0, self.height-1, self.width, 1)
 		cr.fill()		
 
 	def update(self):
-		value=self.function()
-		print "GETTING", value, "bytes aka", value/1024.0, "Kbytes"
-		self.values.append(value)
-		if(len(self.values) > int(math.ceil(self.width*1.0/self.pointWidth))):
-			self.values.pop(0)
-		self.maxValue=max(self.values)
+		if(self.function==None):
+			return
+		if(self.functionData==None):
+			#first time claiming data
+			self.functionData=self.pool.apply_async(self.function)
+		elif(self.functionData.ready()):
+			#data is ready for presenation
+			value=self.functionData.get()
+
+			if(self.valueLabel!=0):
+				self.valueLabel.set_text(str(self.niceFunction(value)))
+
+			if(self.normalize and len(self.values)>0):
+				#normalize is true and there's at least one more value to normalize to
+				value = (1-self.normalizeFactor)*value + self.normalizeFactor*self.values[len(self.values)-1]
+			self.values.append(value)
+
+			if(len(self.values) > int(math.ceil(self.width*1.0/self.pointWidth))):
+				self.values.pop(0)
+
+			self.maxValue=max(self.values)
+
+			self.functionData=self.pool.apply_async(self.function)
 
 	def emptyFunction(self):
 		return 0
+
+	def initValueLabel(self):
+		self.valueLabel=Gtk.Label()
+		self.fixed.put(self.valueLabel, 10, 10)
+		self.valueLabelName=self.name+"ValueLabel"
+		self.valueLabel.set_name(self.valueLabelName)
 
 	def getSize(self, widget, allocation):
 		self.width=allocation.width
@@ -91,6 +140,9 @@ class Widget():
 			self.width=int(size[0])
 			self.height=int(size[1])
 			self.drawingArea.set_size_request(int(size[0]), int(size[1]))
+		elif(key=="graph-pos"):
+			coords=value.split(",")
+			self.fixed.move(self.drawingArea, int(coords[0]), int(coords[1]))
 		elif(key=="background-color"):
 			self.updateCss(key, value)
 		elif(key=="color"):
@@ -107,6 +159,12 @@ class Widget():
 			elif(value=="networkDown"):
 				from Tools.network import networkDown
 				self.function=networkDown
+			elif(value=="networkTotalUp"):
+				from Tools.network import networkTotalUp
+				self.function=networkTotalUp
+			elif(value=="networkTotalDown"):
+				from Tools.network import networkTotalDown
+				self.function=networkTotalDown
 			elif(value=="cpuPercent"):
 				from Tools.hardware import cpuPercent
 				self.function=cpuPercent
@@ -116,11 +174,45 @@ class Widget():
 			elif(value=="hddPercent"):
 				from Tools.hardware import hddPercent
 				self.function=hddPercent
+			elif(value=="upTime"):
+				from Tools.hardware import upTime
+				self.function=upTime
 		elif(key=="show-x"):
 			if(int(value)==1):
 				self.showAxisX=True
 			else:
 				self.showAxisX=False
+		elif(key=="normalize"):
+			if(int(value)==1):
+				self.normalize=True
+			else:
+				self.normalize=False
+		elif(key=="normalize-factor"):
+			self.normalizeFactor=float(value)
+		elif(key=="label"):
+			if(int(value)==1):
+				self.initValueLabel()
+		elif(key=="label-pos"):
+			coords=value.split(",")
+			if(self.valueLabel==0):
+				self.initValueLabel()
+				self.fixed.move(self.valueLabel, int(coords[0]), int(coords[1]))
+			else:
+				self.fixed.move(self.valueLabel, int(coords[0]), int(coords[1]))
+		elif(key=="label-type"):
+			if(value=="data"):
+				from Tools.hardware import dataToNiceString
+				self.niceFunction=dataToNiceString
+			elif(value=="percent"):
+				from Tools.hardware import percentToNiceString
+				self.niceFunction=percentToNiceString
+			elif(value=="time"):
+				from Tools.hardware import timeToNiceString
+				self.niceFunction=timeToNiceString
+		elif(key=="label-font"):
+			self.updateCss("font", value, self.valueLabelName)
+		elif(key=="label-color"):
+			self.updateCss("color", value, self.valueLabelName)
 		else:
 			stderr(configurationFile+", line "+str(lineCount)+": Unknown command.")
 
@@ -153,4 +245,4 @@ class Widget():
 		self.applyCss()
 
 	def widget(self):
-		return self.drawingArea
+		return self.frame

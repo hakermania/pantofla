@@ -71,7 +71,7 @@ class Widget(Gtk.Window):
 		value=command[len(key)+1:]
 		if receiver not in self.pantoflaWidgetManager.receivers:
 			for widget in self.pantoflaWidgetManager.widgets:
-				if receiver.startswith(widget.receiver):
+				if receiver.rstrip("1234567890")==widget.receiver:
 					self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name, self)
 					self.pantoflaWidgetManager.receivers[receiver].runCommand(key, value, lineCount, configurationFile)
 					break

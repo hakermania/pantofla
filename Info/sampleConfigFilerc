@@ -11,11 +11,11 @@ border=1px solid rgba(255, 255, 255, 0.2)
 
 [Clock1,middle,3]
 #border=1px solid red
-format=%H : %M
+format=%H:%M
 gmt = False
 color=255,255,255,1
 #bgColor=0,255,0,0.1
-font = Droid Sans 26
+font = Droid Sans Mono 22
 #background-image = '/home/alex/36.png'
 
 [Clock2,middle,38]
@@ -72,10 +72,88 @@ color=rgba(255,255,255,0.15)
 length=214
 color=rgba(255,255,255,0.15)
 
-[Graph1, 20, 274]
+[Graph1, 20, 247]
 size=79,26
+graph-pos=0, 27
 color = rgba(255, 255, 255, 1)
 background-color = rgba(255, 0, 255, 0)
 point-width=1
 show-x=1
 function=networkUp
+normalize=1
+normalize-factor=0.6
+label=1
+label-pos=19, 0 
+label-type=data
+label-font=Droid Sans 8
+label-color=rgba(255, 255, 255, 1)
+
+[Graph2, 131, 247]
+size=79,26
+graph-pos=0, 27
+color = rgba(255, 255, 255, 1)
+background-color = rgba(255, 0, 255, 0)
+point-width=1
+show-x=1
+function=networkDown
+normalize=1
+normalize-factor=0.6
+label-pos=32, 0 
+label-type=data
+label-font=Droid Sans 8
+label-color=rgba(255, 255, 255, 1)
+
+[Label1, 20, 247]
+text = 'Up:'
+font = Droid Sans 8
+color = rgba(125, 200, 59, 1)
+
+[Label2, 130, 247]
+text = 'Down:'
+font = Droid Sans 8 
+color = rgba(125, 200, 59, 1)
+
+[Label3, 20, 317]
+text = 'Sent:'
+font = Droid Sans 8
+color = rgba(125, 200, 59, 1)
+
+[Label4, 130, 317]
+text = 'Received:'
+font = Droid Sans 8
+color = rgba(125, 200, 59, 1)
+
+[Label5, 48, 317]
+font = Droid Sans 8
+color = rgba(255, 255, 255, 1)
+function = networkTotalUp
+type = data
+
+[Label6, 179, 317]
+font = Droid Sans 8
+color = rgba(255, 255, 255, 1)
+function = networkTotalDown
+type = data
+
+[Label7, 20, 348]
+text = 'Cpu:'
+font = Droid Sans 8
+color = rgba(125, 200, 59, 1)
+
+[Label8, 20, 365]
+text = 'Mem:'
+font = Droid Sans 8
+color = rgba(125, 200, 59, 1)
+
+[Label9, 20, 382]
+text = 'Uptime:'
+font = Droid Sans 8
+color = rgba(125, 200, 59, 1)
+
+[Label10, 153, 382]
+size=60,1
+align = right
+font = Droid Sans 8
+#color = rgba(255, 255, 255, 1)
+function=upTime
+type=time

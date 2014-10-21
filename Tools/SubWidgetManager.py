@@ -29,9 +29,11 @@ class SubWidgetManager():
 		self.updateWidgets()
 
 	def updateWidgets(self):
+		atLeastOne=False
 		for widgetName in self.receivers:
+			atLeastOne=True
 			self.receivers[widgetName].update()
-		return True
+		return atLeastOne
 
 	def callWidgetsInitial(self):
 		for widgetName in self.receivers:

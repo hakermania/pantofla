@@ -35,6 +35,8 @@ class WidgetManager():
 				toRemoveIndexes.append(addedIndex)
 				removedConfs.append({"config" : widget["config"], "name" : widget["widget"].name})
 				widget["widget"].destroy()
+				widget["widget"].pantoflaWidgetManager.receivers=[]
+				widget["widget"].pantoflaWidgetManager=0
 			addedIndex+=1
 				
 		if(len(toRemoveIndexes) > 0):

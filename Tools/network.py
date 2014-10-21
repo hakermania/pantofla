@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from output import *
+import psutil, time
 
 pcInterface=''
 interfaceFile='/proc/net/route'
@@ -8,73 +9,45 @@ transmittedFile='/proc/net/dev'
 
 interfaces=['ppp0', 'ppp1', 'wlp2s0', 'wlp2s1', 'wlan0', 'wlan1', 'eth0', 'eth1', 'enp0s0', 'enp0s1']
 
-interfaceFound=False
 oldUp=-1; oldDown=-1
+lastTimeGotUp=0
+lastTimeGotDown=0
 
+def timeNow():
+	return int(round(time.time() * 1000))
 
+def networkTotalDown():
+	return psutil.net_io_counters()[1]
 
-def strInFile(text, fileName):
-	try:
-		return text in open(fileName).read()
-	except:
-		stderr("File "+fileName+" cannot be opened!")
-		return False
-
-def findInterface():
-	global interfaceFound, pcInterface
-	for interface in interfaces:
-		if(strInFile(interface, interfaceFile)):
-			pcInterface=interface
-			print interface
-			interfaceFound=True
-			break
-
-def getTotalUp():
-	if not interfaceFound:
-		findInterface()
-		if not interfaceFound:
-			stderr("Interface could not be found")
-			return 0
-	try:
-		print "try1"
-		trFile=open(transmittedFile, 'r')
-		print "try1.5"
-		infoLine=''
-		for line in trFile:
-			print "try2"
-			line=line.rstrip()
-			line=line.lstrip()
-			if(not line.startswith(pcInterface)):
-				continue
-			else:
-				#line found
-				infoLine=line
-				break
-
-		trFile.close()
-		print infoLine.split()
-		return int(infoLine.split()[9])
-	except:
-		stderr("Could not open file "+transmittedFile+" for reading!")
-		return 0
+def networkTotalUp():
+	return psutil.net_io_counters()[0]
 
 def networkUp():
-	global oldUp
-	if not interfaceFound:
-		findInterface()
-		if not interfaceFound:
-			stderr("Interface could not be found")
-			return 0
+	global oldUp, lastTimeGotUp
 	if(oldUp==-1):
 		#first run
-		oldUp=getTotalUp()
+		lastTimeGotUp=timeNow()
+		oldUp=networkTotalUp()
 		return 0
 	else:
-		newUp=getTotalUp()
-		toReturn=newUp-oldUp
+		delta=timeNow()-lastTimeGotUp
+		lastTimeGotUp=timeNow()
+		newUp=networkTotalUp()
+		toReturn=((newUp-oldUp)*1.0)*(1000.0/delta)
 		oldUp=newUp
 		return toReturn
 
-
-findInterface()
-print pcInterface
+def networkDown():
+	global oldDown, lastTimeGotDown
+	if(oldDown==-1):
+		#first run
+		lastTimeGotDown=timeNow()
+		oldDown=networkTotalDown()
+		return 0
+	else:
+		delta=timeNow()-lastTimeGotDown
+		lastTimeGotDown=timeNow()
+		newDown=networkTotalDown()
+		toReturn=((newDown-oldDown)*1.0)*(1000.0/delta)
+		oldDown=newDown
+		return toReturn
