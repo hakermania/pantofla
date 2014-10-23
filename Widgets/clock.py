@@ -44,8 +44,11 @@ class Widget():
 		self.frame.connect('destroy', self.destroyed)
 		self.frame.connect('size-allocate', self.getSize)
 		self.readyShow=True
+		self.cssApplied=False
 
 	def getSize(self, widget, allocation):
+		if not self.cssApplied:
+			return
 		self.width=allocation.width
 		self.height=allocation.height
 		if(self.hMid):
@@ -61,9 +64,11 @@ class Widget():
 
 	def update(self):
 		if(self.gmt):
-			self.clockLabel.set_text(strftime(self.format, gmtime()))
+			if(self.clockLabel.get_text()!=strftime(self.format, gmtime())):
+				self.clockLabel.set_text(strftime(self.format, gmtime()))
 		else:
-			self.clockLabel.set_text(strftime(self.format))
+			if(self.clockLabel.get_text()!=strftime(self.format)):
+				self.clockLabel.set_text(strftime(self.format))
 
 	def runCommand(self, key, value, lineCount, configurationFile):
 		if(key=="format"):
@@ -119,7 +124,7 @@ class Widget():
 			if(not (value.startswith("'") and value.endswith("'"))):
 				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'background-image': Format: background-image = 'path'.\nSkipping...")
 				return
-			
+
 			self.updateCss("background-image", "url("+value+")", self.frameName)
 		else:
 			stderr(configurationFile+", line "+str(lineCount)+": Unknown command.")
@@ -151,6 +156,7 @@ class Widget():
 
 	def initial(self):
 		self.applyCss()
+		self.cssApplied=True
 
 	def widget(self):
 		return self.frame

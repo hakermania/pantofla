@@ -17,29 +17,30 @@ class Widget():
 		self.label=Gtk.Label()
 		self.name=parentName+name
 		self.label.set_name(self.name)
-		
-		self.format=Defaults.widget.defaultClockFormat
-		self.gmt=Defaults.widget.defaultGmtClockValue
+
 		self.styleProvider=Gtk.CssProvider()
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 		self.currentCss={}
 
 		self.cssClear = [ self.name ]
 
-		self.label.connect('destroy', self.destroyed)
-		self.label.connect('size-allocate', self.getSize)
-
 		self.frame=Gtk.Frame()
 		self.frame.set_shadow_type(Gtk.ShadowType(Gtk.ShadowType.NONE))
 		self.frame.add(self.label)
+
+		self.frame.connect('destroy', self.destroyed)
+		self.label.connect('size-allocate', self.getSize)
 
 		self.readyShow=True
 		self.function = None
 		self.niceFunction = None
 		self.functionData = None
 		self.pool = None
+		self.cssApplied=False
 
 	def getSize(self, widget, allocation):
+		if not self.cssApplied:
+			return
 		self.width=allocation.width
 		self.height=allocation.height
 		if(self.hMid):
@@ -47,7 +48,7 @@ class Widget():
 		if(self.vMid):
 			self.y=(self.parent.height - self.height)/2.0
 		if(self.hMid or self.vMid):
-			self.parent.fixed.move(self.label, self.x, self.y)
+			self.parent.fixed.move(self.frame, self.x, self.y)
 		widget.disconnect_by_func(self.getSize)
 
 	def destroyed(self, widget):
@@ -175,6 +176,7 @@ class Widget():
 
 	def initial(self):
 		self.applyCss()
+		self.cssApplied=True
 
 	def widget(self):
 		return self.frame

@@ -17,6 +17,8 @@ class SubWidgetManager():
 
 		#dynamically add all the modules inside the Widgets package
 		for importer, modname, ispkg in pkgutil.iter_modules(Widgets.__path__):
+			if(modname=="widget"):
+				continue #skip the gadget, which is the window which keeps the other widgets
 			self.widgets.append(importer.find_module(modname).load_module(modname))
 
 		self.updateInterval = Defaults.widget.defaultUpdateInterval

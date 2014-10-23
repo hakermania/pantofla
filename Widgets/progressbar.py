@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-receiver="Graph"
+receiver="Progressbar"
 
 from gi.repository import Gtk, Gdk, GdkX11
 from Tools.output import *
 from multiprocessing.pool import ThreadPool
-import math
 
 class Widget():
 	def __init__(self, name, parentName, parent):
@@ -13,14 +12,14 @@ class Widget():
 		self.vMid=False
 		self.name=parentName+name
 
-		self.width=100
-		self.height=50
-
 		self.drawingArea=Gtk.DrawingArea()
 		self.drawingAreaName=self.name+"DrawingArea"
 		self.drawingArea.set_name(self.drawingAreaName)
 
-		self.drawingArea.set_size_request(200, 200)
+		self.width=100
+		self.height=50
+
+		self.drawingArea.set_size_request(self.width+2, self.height+2)
 
 		self.styleProvider=Gtk.CssProvider()
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
@@ -29,13 +28,7 @@ class Widget():
 		self.updateCss("background-color", "rgba(255, 255, 0, 1)")
 
 		self.color = { "r" : 1.0, "g" : 1.0, "b" : 1.0, "a" : 1.0 }
-
-		self.pointWidth=1
-
-		self.showAxisX=True
-		self.normalize=True
-
-		self.normalizeFactor=0.5
+		self.outlineColor = { "r" : 1.0, "g" : 1.0, "b" : 1.0, "a" : 1.0 }
 
 		self.valueLabel=0
 
@@ -63,6 +56,9 @@ class Widget():
 
 		self.cssClear = [ self.name, self.fixedName, self.frameName, self.drawingAreaName ]
 
+		self.lastPercentage=0
+		self.labelFrame=0
+		self.outline=True
 		self.readyShow=True
 		self.functionData = None
 		self.function = None
@@ -73,22 +69,33 @@ class Widget():
 			self.styleProvider.load_from_data("#"+name+" { } ")
 
 	def draw(self, widget, cr):
-		cr.set_source_rgba(self.color["r"], self.color["g"], self.color["b"], self.color["a"])
 
-		valuesN=len(self.values)
-		for i in range(valuesN):
-			#self.height-1 here because 0 is 1 pixel high
-			if(self.maxValue==0):
-				height=0
+		progressValue=0
+		if(self.height>self.width):
+			progressValue=int(round(self.lastPercentage*self.height/100.0))
+		else:
+			progressValue=int(round(self.lastPercentage*self.width/100.0))
+		
+		if self.outline:
+			cr.set_source_rgba(self.outlineColor["r"], self.outlineColor["g"], self.outlineColor["b"], self.outlineColor["a"])
+			cr.move_to(0,0)
+			cr.line_to(self.width, 0)
+			cr.line_to(self.width, self.height)
+			cr.line_to(0, self.height)
+			cr.line_to(0, 0)
+			cr.stroke()
+			cr.set_source_rgba(self.color["r"], self.color["g"], self.color["b"], self.color["a"])
+			if(self.width>self.height):
+				cr.rectangle(1, 1, progressValue, self.height)
 			else:
-				height=(self.values[i]*self.height*1.0/self.maxValue)
-			if not self.showAxisX:
-				cr.rectangle(self.width-self.pointWidth*(valuesN-i), self.height-height, self.pointWidth, self.height)
+				cr.rectangle(0, self.height-progressValue, self.width, progressValue)
+		else:
+			cr.set_source_rgba(self.color["r"], self.color["g"], self.color["b"], self.color["a"])
+			if(self.width>self.height):
+				cr.rectangle(0, 0, progressValue, self.height)
 			else:
-				cr.rectangle(self.width-self.pointWidth*(valuesN-i), self.height-height-1, self.pointWidth, self.height)
-		if(self.showAxisX):
-			cr.rectangle(0, self.height-1, self.width, 1)
-		cr.fill()		
+				cr.rectangle(0, self.height-progressValue, self.width, progressValue)
+		cr.fill()
 
 	def update(self):
 		if(self.function==None):
@@ -98,22 +105,12 @@ class Widget():
 			self.functionData=self.pool.apply_async(self.function)
 		elif(self.functionData.ready()):
 			#data is ready for presenation
-			value=self.functionData.get()
+			self.lastPercentage=self.functionData.get()
 
 			if(self.valueLabel!=0):
-				updatedString=str(self.niceFunction(value))
+				updatedString=str(self.niceFunction(self.lastPercentage))
 				if(updatedString!=self.valueLabel.get_text()):
 					self.valueLabel.set_text(updatedString)
-
-			if(self.normalize and len(self.values)>0):
-				#normalize is true and there's at least one more value to normalize to
-				value = (1-self.normalizeFactor)*value + self.normalizeFactor*self.values[len(self.values)-1]
-			self.values.append(value)
-
-			if(len(self.values) > int(math.ceil(self.width*1.0/self.pointWidth))):
-				self.values.pop(0)
-
-			self.maxValue=max(self.values)
 
 			self.functionData=self.pool.apply_async(self.function)
 
@@ -122,9 +119,12 @@ class Widget():
 
 	def initValueLabel(self):
 		self.valueLabel=Gtk.Label()
-		self.fixed.put(self.valueLabel, 10, 10)
 		self.valueLabelName=self.name+"ValueLabel"
 		self.valueLabel.set_name(self.valueLabelName)
+		self.labelFrame=Gtk.Frame()
+		self.labelFrame.set_shadow_type(Gtk.ShadowType(Gtk.ShadowType.NONE))
+		self.labelFrame.add(self.valueLabel)
+		self.fixed.put(self.labelFrame, 10, 10)
 
 	def getSize(self, widget, allocation):
 		self.width=allocation.width
@@ -141,8 +141,9 @@ class Widget():
 			size=value.split(",")
 			self.width=int(size[0])
 			self.height=int(size[1])
-			self.drawingArea.set_size_request(int(size[0]), int(size[1]))
-		elif(key=="graph-pos"):
+			#plus two goes for the outline
+			self.drawingArea.set_size_request(int(size[0])+2, int(size[1])+2)
+		elif(key=="progressbar-pos"):
 			coords=value.split(",")
 			self.fixed.move(self.drawingArea, int(coords[0]), int(coords[1]))
 		elif(key=="background-color"):
@@ -152,8 +153,6 @@ class Widget():
 			value=value.split(",")
 			self.color["r"]=float(value[0])/255.0; self.color["g"]=float(value[1])/255.0;
 			self.color["b"]=float(value[2])/255.0; self.color["a"]=float(value[3]);
-		elif(key=="point-width"):
-			self.pointWidth=int(value)
 		elif(key=="function"):
 			if(value=="networkUp"):
 				from Tools.network import networkUp
@@ -179,28 +178,16 @@ class Widget():
 			elif(value=="upTime"):
 				from Tools.hardware import upTime
 				self.function=upTime
-		elif(key=="show-x"):
-			if(int(value)==1):
-				self.showAxisX=True
-			else:
-				self.showAxisX=False
-		elif(key=="normalize"):
-			if(int(value)==1):
-				self.normalize=True
-			else:
-				self.normalize=False
-		elif(key=="normalize-factor"):
-			self.normalizeFactor=float(value)
 		elif(key=="label"):
 			if(int(value)==1):
 				self.initValueLabel()
 		elif(key=="label-pos"):
 			coords=value.split(",")
-			if(self.valueLabel==0):
+			if(self.labelFrame==0):
 				self.initValueLabel()
-				self.fixed.move(self.valueLabel, int(coords[0]), int(coords[1]))
+				self.fixed.move(self.labelFrame, int(coords[0]), int(coords[1]))
 			else:
-				self.fixed.move(self.valueLabel, int(coords[0]), int(coords[1]))
+				self.fixed.move(self.labelFrame, int(coords[0]), int(coords[1]))
 		elif(key=="label-type"):
 			if(value=="data"):
 				from Tools.hardware import dataToNiceString
@@ -220,6 +207,19 @@ class Widget():
 				self.valueLabel.set_halign(Gtk.Align.END)
 			elif(value=="left"):
 				self.valueLabel.set_halign(Gtk.Align.START)
+		elif(key=="label-size"):
+			size=value.split(",")
+			self.labelFrame.set_size_request(int(size[0]), int(size[1]))
+		elif(key=="outline"):
+			if(int(value)==1):
+				self.outline=True
+			else:
+				self.outline=False
+		elif(key=="outline-color"):
+			value=value[5:-1]
+			value=value.split(",")
+			self.outlineColor["r"]=float(value[0])/255.0; self.outlineColor["g"]=float(value[1])/255.0;
+			self.outlineColor["b"]=float(value[2])/255.0; self.outlineColor["a"]=float(value[3]);
 		else:
 			stderr(configurationFile+", line "+str(lineCount)+": Unknown command.")
 

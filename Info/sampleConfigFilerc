@@ -54,9 +54,6 @@ sep1-length = 76
 sep2-pos=152, 94
 sep2-color = rgba(255,255,255,0.15)
 sep2-length = 76
-day0Range-pos = 22, 44
-day0Range-font = Droid Sans 8
-day0Range-color = rgba(255,255,255,1)
 day1Range-font = Droid Sans 8
 day1Range-color = rgba(255,255,255,1)
 day2Range-font = Droid Sans 8
@@ -76,7 +73,7 @@ color=rgba(255,255,255,0.15)
 size=79,26
 graph-pos=0, 27
 color = rgba(255, 255, 255, 1)
-background-color = rgba(255, 0, 255, 0)
+background-color = rgba(0,0,0,0)
 point-width=1
 show-x=1
 function=networkUp
@@ -92,7 +89,7 @@ label-color=rgba(255, 255, 255, 1)
 size=79,26
 graph-pos=0, 27
 color = rgba(255, 255, 255, 1)
-background-color = rgba(255, 0, 255, 0)
+background-color = rgba(0, 0, 0, 0)
 point-width=1
 show-x=1
 function=networkDown
@@ -150,10 +147,66 @@ text = 'Uptime:'
 font = Droid Sans 8
 color = rgba(125, 200, 59, 1)
 
-[Label10, 153, 382]
+[Label10, 150, 382]
 size=60,1
 align = right
 font = Droid Sans 8
-#color = rgba(255, 255, 255, 1)
 function=upTime
 type=time
+
+[Progressbar1, 97, 348]
+size=35, 4
+progressbar-pos=0, 3
+function=cpuPercent
+label=1
+label-pos=53, 0
+label-type=percent
+label-font=Droid Sans 8
+label-align=right
+label-size=60,1
+color = rgba(255, 255, 255, 1)
+background-color = rgba(0, 0, 0, 0)
+outline=1
+
+[Progressbar2, 97, 365]
+size=35, 4
+progressbar-pos=0, 3
+function=ramPercent
+label=1
+label-pos=53, 0
+label-type=percent
+label-font=Droid Sans 8
+label-align=right
+label-size=60,1
+color = rgba(255, 255, 255, 1)
+background-color = rgba(0, 0, 0, 0)
+outline=1
+
+[Frame1, 6, 447]
+border=1px solid rgba(255, 255, 255, 0.1)
+border-radius=3px
+size=218, 16
+
+[Label11, 19, 449]
+text='Proc'
+color=rgba(255,255,255,1)
+font=Droid Sans 8
+
+[Label12, middle, 449]
+text='Mem%'
+font=Droid Sans 8
+color=rgba(255,255,255,1)
+
+[Label13, 172, 449]
+text='Mem'
+size=38,1
+align=right
+font=Droid Sans 8
+color=rgba(255,255,255,1)
+
+[ProcessViewer1, 10, 450]
+size=150,100
+crspacing=40,15
+cr=3,3
+#c1-pos=120,0
+#r1-pos=10,20

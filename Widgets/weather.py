@@ -37,10 +37,6 @@ class Widget():
 		self.temperatureLabel.set_name(self.temperatureLabelName)
 		self.temperatureLabel.set_alignment(xalign=0.2, yalign=0.2)
 
-		self.day0Range=Gtk.Label()
-		self.day0RangeName=self.name+"day0Range"
-		self.day0Range.set_name(self.day0RangeName)
-
 		self.day1Range=Gtk.Label()
 		self.day1RangeName=self.name+"day1Range"
 		self.day1Range.set_name(self.day1RangeName)
@@ -149,8 +145,6 @@ class Widget():
 
 		self.fixed.put(self.temperatureLabel, 15, 0)
 
-		self.fixed.put(self.day0Range, 22, 44)
-
 		self.fixed.put(self.pressureLabel, 193, 5)
 		self.fixed.put(self.humidityLabel, 193, 26)
 		self.fixed.put(self.speedLabel, 193, 47)
@@ -234,8 +228,8 @@ class Widget():
 			self.styleProvider.load_from_data("#"+name+" { } ")
 
 	def getWeather(self):
-		# self.readyShow=True #todo remove
-		# return []  #todo remove
+		self.readyShow=True #todo remove
+		return []  #todo remove
 		try:
 			baseurl = "https://query.yahooapis.com/v1/public/yql?"
 			yql_query = "select * from weather.forecast where woeid in (select woeid from geo.places(1) where text='"+self.cityName+"') and u='"+self.unit+"'"
@@ -269,18 +263,14 @@ class Widget():
 				thisDate=datetime.datetime.strptime(day['date'], '%d %b %Y')
 				if(thisDate.day==datetime.date.today().day):
 					#it is today
-					self.day0Range.set_text(day['low']+u'°/'+day['high']+u'°')
-					continue
-				if(thisDate.day==(datetime.date.today() + datetime.timedelta(days=1)).day):
-					#tommorow
 					self.f1Label.set_text(day['day'].upper())
 					self.day1ConditionIcon.set_from_pixbuf(loadPixbuf(home+"/.pantofla/Weather/Conditions-Icons/"+day['code']+".png"))
 					self.day1Range.set_text(day['low']+u'°/'+day['high']+u'°')
-				elif(thisDate.day==(datetime.date.today() + datetime.timedelta(days=2)).day):
+				elif(thisDate.day==(datetime.date.today() + datetime.timedelta(days=1)).day):
 					self.f2Label.set_text(day['day'].upper())
 					self.day2ConditionIcon.set_from_pixbuf(loadPixbuf(home+"/.pantofla/Weather/Conditions-Icons/"+day['code']+".png"))
 					self.day2Range.set_text(day['low']+u'°/'+day['high']+u'°')
-				elif(thisDate.day==(datetime.date.today() + datetime.timedelta(days=3)).day):
+				elif(thisDate.day==(datetime.date.today() + datetime.timedelta(days=2)).day):
 					self.f3Label.set_text(day['day'].upper())
 					self.day3ConditionIcon.set_from_pixbuf(loadPixbuf(home+"/.pantofla/Weather/Conditions-Icons/"+day['code']+".png"))
 					self.day3Range.set_text(day['low']+u'°/'+day['high']+u'°')
@@ -370,16 +360,6 @@ class Widget():
 				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'city-pos': Format: city-pos = x,y.\nSkipping...")
 				return
 			self.fixed.move(self.cityLabel, int(coords[0]), int(coords[1]))
-		elif(key=="day0Range-pos"):
-			coords=value.split(",")
-			if(len(coords)!=2):
-				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'day0Range-pos': Format: day0Range-pos = x,y.\nSkipping...")
-				return
-			self.fixed.move(self.day0Range, int(coords[0]), int(coords[1]))
-		elif(key=="day0Range-font"):
-			self.updateCss("font", value, self.day0RangeName)
-		elif(key=="day0Range-color"):
-			self.updateCss("color", value, self.day0RangeName)
 		elif(key=="day1Range-pos"):
 			coords=value.split(",")
 			if(len(coords)!=2):

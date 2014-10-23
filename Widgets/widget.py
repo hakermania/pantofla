@@ -127,12 +127,14 @@ class Widget(Gtk.Window):
 						continue
 					receiver=parts[0]
 					if(not representsInt(parts[1])):
+						parts[1]=parts[1].rstrip().lstrip()
 						if(parts[1]!="middle"):
 							stderr(configurationFile+", line "+str(lineCount)+": Syntax error: Expected widget name, position x, position y for the widget initialization.\nSkipping...")
 							continue
 					else:
 						parts[1]=int(parts[1])
 					if(not representsInt(parts[2])):
+						parts[2]=parts[2].rstrip().lstrip()
 						if(parts[2]!="middle"):
 							stderr(configurationFile+", line "+str(lineCount)+": Syntax error: Expected widget name, position x, position y for the widget initialization.\nSkipping...")
 							continue
@@ -142,7 +144,7 @@ class Widget(Gtk.Window):
 					self.currentPosition=[parts[1], parts[2]]
 					if receiver not in self.pantoflaWidgetManager.receivers:
 						for widget in self.pantoflaWidgetManager.widgets:
-							if receiver.startswith(widget.receiver):
+							if receiver.rstrip("1234567890")==widget.receiver:
 								self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name, self)
 								lastReceiver=receiver
 								break
@@ -334,23 +336,13 @@ class Widget(Gtk.Window):
 		if not updateIntervalSet:
 			self.pantoflaWidgetManager.setUpdateInterval(1000)
 
-		#TO REMOVE START
-		# self.YHeight=0
-		# for child in self.fixed:
-		# 	self.fixed.remove(child)
-		# 	self.pantoflaWidgetManager.receivers={}
-		# 	print "PERNAW1"
-		# 	self.fixed.attach(Gtk.Label("Hello"+str(self.YHeight)), 0, self.YHeight, 1, 1)
-		# 	self.YHeight+=1
-		#TO REMOVE END
+		self.pantoflaWidgetManager.callWidgetsInitial()
 		self.show_all()
 		self.hide()
-		self.pantoflaWidgetManager.callWidgetsInitial()
 		self.pantoflaWidgetManager.startUpdating()
 
 		GObject.timeout_add(1000, self.checkWidgetsReady)
 		self.checkWidgetsReady()
-		#self.endOperations()
 
 	def checkWidgetsReady(self):
 		atLeastOneNotReady=False

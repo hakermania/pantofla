@@ -65,5 +65,8 @@ def timeToNiceString(timeValue):
 def cpuPercent():
 	return psutil.cpu_percent(interval=0.9)
 
+def ramPercent():
+	return psutil.virtual_memory()[2]
+
 def upTime():
 	return time.time()-psutil.get_boot_time()
