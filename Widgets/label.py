@@ -86,6 +86,9 @@ class Widget():
 				self.label.set_halign(Gtk.Align.END)
 			elif(value=="left"):
 				self.label.set_halign(Gtk.Align.START)
+			else:
+				stderr(configurationFile+", line "+str(lineCount)+": Badly formatted command 'align': Format: align = left/right.\nSkipping...")
+				return
 		elif(key=="font"):
 			self.updateCss("font", value)
 		elif(key=="color"):

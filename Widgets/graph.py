@@ -73,6 +73,7 @@ class Widget():
 			self.styleProvider.load_from_data("#"+name+" { } ")
 
 	def draw(self, widget, cr):
+		#todo on 0 bytes graph stays still, make it move
 		cr.set_source_rgba(self.color["r"], self.color["g"], self.color["b"], self.color["a"])
 
 		valuesN=len(self.values)

@@ -6,7 +6,8 @@ import psutil, time
 dataTypes = [ "B", "K", "M", "G", "T" ]
 timeTypes = [ "s", "m", "h", "d", "w", "y" ]
 
-def dataToNiceString(data):
+def dataToNiceString(data, decimalRound=None):
+	data=int(data)
 	maxValue=len(dataTypes)-1
 	niceData=data
 	counter=0
@@ -15,17 +16,28 @@ def dataToNiceString(data):
 		niceData/=1024.0
 		if(counter==maxValue):
 			break
-	decimalRound=1
-	if(int(niceData) < 10):
-		decimalRound=2
-	return str(round(niceData, decimalRound))+dataTypes[counter]
+	if(decimalRound==None):
+		decimalRound=1
+		if(int(niceData) < 10):
+			decimalRound=2
+		return str(round(niceData, decimalRound))+dataTypes[counter]
+	elif(decimalRound==0):
+		return str(int(round(niceData, decimalRound)))+dataTypes[counter]
+	else:
+		return str(round(niceData, decimalRound))+dataTypes[counter]
 
-def percentToNiceString(percent):
-	return str(int(round(percent)))+"%"
+def percentToNiceString(percent, percentDecimals=None, keepTrailing=None):
+	if(percentDecimals==None or percentDecimals==0):
+		return str(int(round(float(percent))))+"%"
+	else:
+		if(keepTrailing==None or keepTrailing==False):
+			return str((round(float(percent), percentDecimals)))+"%"
+		else:
+			return ('{0:.'+str(percentDecimals)+'f}').format(round(float(percent), percentDecimals))+"%"
 
 def timeToNiceString(timeValue):
 	#timeValue is in seconds
-	timeValue=int(round(timeValue))
+	timeValue=int(round(int(timeValue)))
 	years=timeValue/31536000
 	timeValue-=years*31536000
 	weeks=timeValue/604800
