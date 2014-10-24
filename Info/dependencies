@@ -1,2 +1,3 @@
 gir1.2-rsvg-2.0
 python-psutil
+python-gi-cairo

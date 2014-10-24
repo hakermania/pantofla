@@ -8,5 +8,5 @@ appName="Pantofla"
 configurationFolderName="pantofla"
 
 appDirectory="/usr/share/pantofla/"
-configurationPath = os.path.expanduser(os.getenv('XDG_CONFIG_HOME', '~/.config/'))+configurationFolderName+"/"
+configurationPath = os.path.expanduser(os.getenv('XDG_CONFIG_HOME', '~/.config/'))+'/'+configurationFolderName+"/"
 configFilename="widget1rc"

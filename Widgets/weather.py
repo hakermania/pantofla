@@ -228,8 +228,8 @@ class Widget():
 			self.styleProvider.load_from_data("#"+name+" { } ")
 
 	def getWeather(self):
-		self.readyShow=True #todo remove
-		return []  #todo remove
+		# self.readyShow=True #todo remove
+		# return []  #todo remove
 		try:
 			baseurl = "https://query.yahooapis.com/v1/public/yql?"
 			yql_query = "select * from weather.forecast where woeid in (select woeid from geo.places(1) where text='"+self.cityName+"') and u='"+self.unit+"'"

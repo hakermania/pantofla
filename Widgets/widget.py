@@ -18,12 +18,12 @@ class Widget(Gtk.Window):
 			type_hint=Gdk.WindowTypeHint.DOCK)
 		
 		#Set the window properties to look like a gadget. These cannot be changed through the configuration file
+		self.stick()
 		self.set_name(name)
 		self.name = name
 		self.set_wmclass(Defaults.widget.wmClass, Defaults.widget.wmClass)
 		self.set_keep_below(True)
 		self.set_sensitive(False)
-		self.stick()
 
 		self.rgbaVisual = self.get_screen().get_rgba_visual()
 

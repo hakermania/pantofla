@@ -22,6 +22,12 @@ class Widget():
 		self.rowSpacing=30
 		self.columnSpacing=30
 
+		self.availableColumnTypes = { "name":"name", "username":"username", "pid":"pid",
+									  "cpuPercent":"get_cpu_percent", "ram":"get_memory_info",
+									  "ramPercent":"get_memory_percent", "status":"status" }
+		self.columnTypes={}
+		self.psutilInfo = []
+
 		self.styleProvider=Gtk.CssProvider()
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 		self.currentCss={}
@@ -48,6 +54,21 @@ class Widget():
 		widget.hide()
 		widget.destroy()
 		widget=0
+
+	def constructPsUtilInfo(self):
+		print self.columnTypes, self.columns
+		if(len(self.columnTypes)!=self.columns):
+			stderr("Not all column types have been declared for "+receiver+"!")
+			self.sortFunction=None
+			return
+		for key in self.columnTypes:
+			self.psutilInfo.append(self.availableColumnTypes[self.columnTypes[key]])
+		if(self.sortFunction==self.cpuSort):
+			if "get_cpu_percent" not in self.psutilInfo:
+				self.psutilInfo.append("get_cpu_percent")
+		elif(self.sortFunction==self.memorySort):
+			if "get_memory_percent" not in self.psutilInfo:
+				self.psutilInfo.append("get_memory_percent")
 
 	def updateLabelArray(self):
 		self.fixed.forall(self.destroyWidget)
@@ -83,31 +104,74 @@ class Widget():
 		for name in self.cssClear:
 			self.styleProvider.load_from_data("#"+name+" { } ")
 
-	def update(self):
+	def memorySort(self):
 		procs=[]
 		for p in psutil.process_iter():
-				try:
-						p.dict =  p.as_dict(['name', 'get_memory_percent', 'get_memory_info'])
-						processArray = [ p.dict['name'], p.dict['memory_percent'], p.dict['memory_info'][0] ]
-				except psutil.NoSuchProcess:
-						pass
+			try:
+				p.dict = p.as_dict(self.psutilInfo)
+			except psutil.NoSuchProcess:
+				pass
+			else:
+				procs.append(p.dict)
+
+		# return processes sorted by CPU percent usage
+		processes = sorted(procs, key=lambda p: p['memory_percent'], reverse=True)
+		if(self.rows > len(processes)):
+			return processes
+		else:
+			return processes[:self.rows]
+
+	def cpuSort(self):
+		procs=[]
+		for p in psutil.process_iter():
+			try:
+				p.dict = p.as_dict(self.psutilInfo)
+			except psutil.NoSuchProcess:
+				pass
+			else:
+				procs.append(p.dict)
+
+		# return processes sorted by CPU percent usage
+		processes = sorted(procs, key=lambda p: p['cpu_percent'], reverse=True)
+		if(self.rows > len(processes)):
+			return processes
+		else:
+			return processes[:self.rows]
+
+	def update(self):
+		if(self.sortFunction==None):
+			stderr("No sort function has been declared! The "+receiver+" cannot show results!")
+			return
+
+		sortedProcs=self.sortFunction()
+
+		for i in range(self.columns):
+			columnKey=self.columnTypes[i]
+			accessFirst=False
+			if columnKey=='cpuPercent':
+				columnKey='cpu_percent'
+			elif columnKey=='ramPercent':
+				columnKey='memory_percent'
+			elif columnKey=='ram':
+				columnKey='memory_info'
+				accessFirst=True
+			for j in range(self.rows):
+				if accessFirst:
+					if(sortedProcs[j][columnKey]!=self.labels[j][i].get_text()):
+						self.labels[j][i].set_text(str(sortedProcs[j][columnKey][0]))
 				else:
-						procs.append(processArray)
-		result = sorted(procs, key=lambda processArray: processArray[1], reverse=True)[:10]
-		#print result
+					if(sortedProcs[j][columnKey]!=self.labels[j][i].get_text()):
+						self.labels[j][i].set_text(str(sortedProcs[j][columnKey]))
 
 	def runCommand(self, key, value, lineCount, configurationFile):
 		if(key=="size"):
 			size=value.split(",")
 			self.frame.set_size_request(int(size[0]),int(size[1]))
-		elif(key=="align"):
-			if(value=="right"):
-				self.label.set_halign(Gtk.Align.END)
-			elif(value=="left"):
-				self.label.set_halign(Gtk.Align.START)
 		elif(key=="font"):
+			#todo apply same font to all
 			self.updateCss("font", value)
 		elif(key=="color"):
+			#todo apply same color to all
 			self.updateCss("color", value)
 		elif(key=="border"):
 			self.updateCss("border", value)
@@ -119,21 +183,11 @@ class Widget():
 			self.updateCss("border-bottom", value)
 		elif(key=="border-left"):
 			self.updateCss("border-left", value)
-		elif(key=="padding"):
-			self.updateCss("padding", value)
-		elif(key=="padding-top"):
-			self.updateCss("padding-top", value)
-		elif(key=="padding-right"):
-			self.updateCss("padding-right", value)
-		elif(key=="padding-bottom"):
-			self.updateCss("padding-bottom", value)
-		elif(key=="padding-left"):
-			self.updateCss("padding-left", value)
 		elif(key=="sort"):
 			if(value=="memory"):
-				self.sortFunction=self.memorySort()
+				self.sortFunction=self.memorySort
 			elif(value=="cpu"):
-				self.sortFunction=self.cpuSort()
+				self.sortFunction=self.cpuSort
 		elif(key=="cr"):
 			size=value.split(",")
 			self.columns=int(size[0])
@@ -190,7 +244,7 @@ class Widget():
 				stderr(configurationFile+", line "+str(lineCount)+": Too high index for command 'c': Max Index: length of columns - 1.\nSkipping...")
 				return
 			if(secondaryKey=="type"):
-				if(value in availableColumnTypes):
+				if(value in self.availableColumnTypes):
 					self.columnTypes[columnNumber]=value;
 				else:
 					stderr(configurationFile+", line "+str(lineCount)+": Unknown type '"+value+"': Max Index: length of columns - 1.\nSkipping...")
@@ -274,6 +328,7 @@ class Widget():
 	def initial(self):
 		if(len(self.labels)==0):
 			self.updateLabelArray()
+		self.constructPsUtilInfo()
 		self.applyCss()
 		self.cssApplied=True
 
