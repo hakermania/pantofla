@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from output import *
-import psutil, time
+import psutil, time, os
 
 dataTypes = [ "B", "K", "M", "G", "T" ]
 timeTypes = [ "s", "m", "h", "d", "w", "y" ]
@@ -82,3 +82,6 @@ def ramPercent():
 
 def upTime():
 	return time.time()-psutil.get_boot_time()
+
+def systemLoad():
+	return os.getloadavg()[0]

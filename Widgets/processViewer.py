@@ -134,7 +134,11 @@ class Widget():
 		procs=[]
 		for p in psutil.process_iter():
 			try:
-				procs.append(p.as_dict(self.psutilInfo))
+				pdict=p.as_dict(self.psutilInfo)
+				if(len(procs)<self.rows):
+					procs.append(pdict)
+				elif pdict['memory_percent']!=0:
+					procs.append(pdict)
 			except psutil.NoSuchProcess:
 				pass
 
@@ -150,11 +154,13 @@ class Widget():
 		procs=[]
 		for p in psutil.process_iter():
 			try:
-				p.dict = p.as_dict(self.psutilInfo)
+				pdict=p.as_dict(self.psutilInfo)
+				if(len(procs)<self.rows):
+					procs.append(pdict)
+				elif pdict['cpu_percent']!=0:
+					procs.append(pdict)
 			except psutil.NoSuchProcess:
 				pass
-			else:
-				procs.append(p.dict)
 
 		# return processes sorted by CPU percent usage
 		# processes = sorted(procs, key=lambda p: p['cpu_percent'], reverse=True)
@@ -186,7 +192,6 @@ class Widget():
 		if(self.processData==None):
 			self.processData=self.pool.apply_async(self.sortFunction)
 		elif(self.processData.ready()):
-			print "UPDATING"
 			self.counter=0
 			self.readyShow=True
 			sortedProcs=self.processData.get()

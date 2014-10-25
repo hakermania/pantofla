@@ -74,7 +74,6 @@ class Widget():
 
 	def draw(self, widget, cr):
 		#todo on 0 bytes graph stays still, make it move
-		print "drawing"
 		cr=self.drawingArea.get_property('window').cairo_create()
 		cr.set_source_rgba(self.color["r"], self.color["g"], self.color["b"], self.color["a"])
 
@@ -95,7 +94,6 @@ class Widget():
 
 	def update(self):
 		if(self.function==None):
-			print "function none"
 			return
 		if(self.functionData==None):
 			#first time claiming data
@@ -184,6 +182,12 @@ class Widget():
 			elif(value=="upTime"):
 				from Tools.hardware import upTime
 				self.function=upTime
+			elif(value=="systemLoad"):
+				from Tools.hardware import systemLoad
+				self.function=systemLoad
+			else:
+				stderr(configurationFile+", line "+str(lineCount)+": Unknown function value.")
+				return
 		elif(key=="show-x"):
 			if(int(value)==1):
 				self.showAxisX=True

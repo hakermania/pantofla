@@ -24,7 +24,6 @@ def createDefaultConfigurationFile():
 		try:
 			os.makedirs(Defaults.app.configurationPath)
 		except OSError:
-			print 1
 			return False
 
 	#Copy it from the program's folders
@@ -32,7 +31,6 @@ def createDefaultConfigurationFile():
 		shutil.copyfile(Defaults.app.appDirectory+Defaults.app.configFilename, Defaults.app.configurationPath+Defaults.app.configFilename)
 		return True
 	else:
-		print Defaults.app.appDirectory+Defaults.app.configFilename
 		return False
 
 def main():
@@ -57,7 +55,6 @@ def main():
 
 	for filename in configurationFiles:
 		widgetCount+=1
-		print filename
 		widgetManager.add(Widgets.widget.Widget(Defaults.widget.name+str(widgetCount), filename), filename)
 
 	widgetManager.run()
