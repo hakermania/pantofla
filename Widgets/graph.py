@@ -74,6 +74,8 @@ class Widget():
 
 	def draw(self, widget, cr):
 		#todo on 0 bytes graph stays still, make it move
+		print "drawing"
+		cr=self.drawingArea.get_property('window').cairo_create()
 		cr.set_source_rgba(self.color["r"], self.color["g"], self.color["b"], self.color["a"])
 
 		valuesN=len(self.values)
@@ -93,6 +95,7 @@ class Widget():
 
 	def update(self):
 		if(self.function==None):
+			print "function none"
 			return
 		if(self.functionData==None):
 			#first time claiming data
@@ -117,6 +120,7 @@ class Widget():
 			self.maxValue=max(self.values)
 
 			self.functionData=self.pool.apply_async(self.function)
+		self.drawingArea.queue_draw()
 
 	def emptyFunction(self):
 		return 0

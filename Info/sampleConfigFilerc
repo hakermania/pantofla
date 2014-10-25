@@ -204,9 +204,23 @@ align=right
 font=Droid Sans 8
 color=rgba(255,255,255,1)
 
-[ProcessViewer1, 10, 450]
-size=150,100
-crspacing=40,15
-cr=3,3
-#c1-pos=120,0
-#r1-pos=10,20
+[ProcessViewer1, 16, 472]
+crspacing=35, 17
+cr=3,5
+size=200,80
+label-size=50,1
+c0-color = rgba(125, 200, 59, 1)
+c0-align = left
+c1-color = rgba(255,255,255,1)
+c1-align = right
+c2-align = right
+c2-pos=120,0
+sort=ram
+c0-type=name
+c1-type=ramPercent
+c2-type=ram
+font=Droid Sans Mono 8
+c1-pos=70,0
+c2-pos=146,0
+percent-decimals=2
+trim=8
