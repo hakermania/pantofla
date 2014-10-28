@@ -173,6 +173,8 @@ class Widget():
 		self.frame.set_name(self.frameName)
 		self.frame.add(self.fixed)
 
+		self.updateCss("background-color", "rgba(0,0,0,0)", self.frameName)
+
 		self.cssClear = [ self.name, self.cityLabelName, self.temperatureLabelName,
 						self.pressureLabelName, self.humidityLabelName, self.speedLabelName, self.f1LabelName,
 						self.f2LabelName, self.f3LabelName, self.frameName ]
@@ -228,8 +230,8 @@ class Widget():
 			self.styleProvider.load_from_data("#"+name+" { } ")
 
 	def getWeather(self):
-		# self.readyShow=True #todo remove
-		# return []  #todo remove
+		self.readyShow=True #todo remove
+		return []  #todo remove
 		try:
 			baseurl = "https://query.yahooapis.com/v1/public/yql?"
 			yql_query = "select * from weather.forecast where woeid in (select woeid from geo.places(1) where text='"+self.cityName+"') and u='"+self.unit+"'"

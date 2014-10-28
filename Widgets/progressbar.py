@@ -54,6 +54,8 @@ class Widget():
 		self.drawingArea.connect('size-allocate', self.getSize)
 		self.drawingArea.connect('draw', self.draw)
 
+		self.updateCss("background-color", "rgba(0,0,0,0)", self.frameName)
+
 		self.cssClear = [ self.name, self.fixedName, self.frameName, self.drawingAreaName ]
 
 		self.lastPercentage=0

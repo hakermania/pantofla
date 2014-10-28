@@ -25,6 +25,8 @@ class Widget():
 		self.width=100; self.height=100
 		self.frame.set_size_request(self.width, self.height)
 
+		self.updateCss("background-color", "rgba(0,0,0,0)", self.name)
+
 		self.cssClear = [ self.name ]
 
 		self.frame.connect('destroy', self.destroyed)

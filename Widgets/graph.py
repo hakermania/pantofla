@@ -57,6 +57,8 @@ class Widget():
 
 		self.frame.add(self.fixed)
 
+		self.updateCss("background-color", "rgba(0,0,0,0)", self.frameName)
+
 		self.frame.connect('destroy', self.destroyed)
 		self.drawingArea.connect('size-allocate', self.getSize)
 		self.drawingArea.connect('draw', self.draw)

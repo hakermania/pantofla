@@ -15,6 +15,7 @@ class Widget():
 		self.hMid=False
 		self.vMid=False
 		self.label=Gtk.Label()
+		self.GUIName=name
 		self.name=parentName+name
 		self.label.set_name(self.name)
 
@@ -22,11 +23,15 @@ class Widget():
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 		self.currentCss={}
 
-		self.cssClear = [ self.name ]
-
 		self.frame=Gtk.Frame()
 		self.frame.set_shadow_type(Gtk.ShadowType(Gtk.ShadowType.NONE))
+		self.frameName=self.name+"Frame"
+		self.frame.set_name(self.frameName)
 		self.frame.add(self.label)
+
+		self.cssClear = [ self.name, self.frameName ]
+
+		self.updateCss("background-color", "rgba(0,0,0,0)", self.frameName)
 
 		self.frame.connect('destroy', self.destroyed)
 		self.label.connect('size-allocate', self.getSize)
@@ -183,3 +188,39 @@ class Widget():
 
 	def widget(self):
 		return self.frame
+
+	def settings(self):
+		rowArray=[]
+
+		row = Gtk.ListBoxRow()
+		label = Gtk.Label()
+		label.set_markup('<b>'+self.GUIName+'</b>')
+		label.props.halign = Gtk.Align.CENTER
+		row.add(label)
+		
+		rowArray.append(row)
+
+		row = Gtk.ListBoxRow()
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+		row.add(hbox)
+		label = Gtk.Label("Text", xalign=0)
+
+		entry = Gtk.Entry()
+		entry.connect('changed', self.settingsTextChanged)
+		
+
+		entry.props.valign = Gtk.Align.CENTER
+
+		entry.set_text(self.label.get_text())
+
+		hbox.pack_start(label, True, True, 0)
+		hbox.pack_start(entry, False, True, 0)
+
+		rowArray.append(row)
+
+		return rowArray
+
+	def settingsTextChanged(self, widget):
+		print "CURSOR MOVED"
+		self.label.set_text(widget.get_text())
+		

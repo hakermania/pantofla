@@ -81,7 +81,10 @@ def ramPercent():
 	return psutil.virtual_memory()[2]
 
 def upTime():
-	return time.time()-psutil.get_boot_time()
+	try:
+		return time.time()-psutil.boot_time()
+	except:
+		return time.time()-psutil.get_boot_time()
 
 def systemLoad():
 	return os.getloadavg()[0]

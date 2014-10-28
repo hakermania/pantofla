@@ -39,6 +39,8 @@ class Widget():
 		self.frame.set_shadow_type(Gtk.ShadowType(Gtk.ShadowType.NONE))
 		self.frame.add(self.alignment)
 
+		self.updateCss("background-color", "rgba(0,0,0,0)", self.frameName)
+
 		self.cssClear = [ self.name, self.clockLabelName, self.alignmentName, self.frameName ]
 
 		self.frame.connect('destroy', self.destroyed)

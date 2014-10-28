@@ -40,8 +40,12 @@ class Widget():
 		self.fixed=Gtk.Fixed()
 
 		self.frame=Gtk.Frame()
+		self.frameName=self.name+"Frame"
+		self.frame.set_name(self.frameName)
 		self.frame.set_shadow_type(Gtk.ShadowType(Gtk.ShadowType.NONE))
 		self.frame.add(self.fixed)
+
+		self.updateCss("background-color", "rgba(0,0,0,0)", self.frameName)
 
 		self.frame.connect('destroy', self.destroyed)
 		self.frame.connect('size-allocate', self.getSize)
