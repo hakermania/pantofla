@@ -190,37 +190,143 @@ class Widget():
 		return self.frame
 
 	def settings(self):
-		rowArray=[]
+		self.settings = Settings(self)
+		return self.settings.getSettingsWidgets()
+
+
+class Settings():
+	def __init__(self, parent):
+		self.parent=parent
+
+	def getSettingsWidgets(self):
+
+		rowArray = []
+		
+		self.listBox = Gtk.ListBox()
+		self.listBox.set_hexpand(True)
+		self.listBox.set_vexpand(True)
+		self.listBox.set_selection_mode(Gtk.SelectionMode.NONE)
 
 		row = Gtk.ListBoxRow()
-		label = Gtk.Label()
-		label.set_markup('<b>'+self.GUIName+'</b>')
-		label.props.halign = Gtk.Align.CENTER
-		row.add(label)
-		
+
+		button = Gtk.Button.new_with_label('')
+		button.get_child().set_markup('<b>-- '+self.parent.GUIName+' --</b>')
+		button.set_hexpand(True)
+		button.connect('clicked', self.showOptions)
+
+		row.add(button)
 		rowArray.append(row)
 
 		row = Gtk.ListBoxRow()
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+		
+		label = Gtk.Label("Position", xalign=0)
+		hbox.pack_start(label, True, True, 0)
+
+		hbox.pack_start(Gtk.Label("X"), False, True, 0)
+
+		spinbox = Gtk.SpinButton.new_with_range(0, 5000, 1)
+		spinbox.set_value(self.parent.x)
+		spinbox.connect('value-changed', self.settingsPositionXChanged)
+		spinbox.props.valign = Gtk.Align.CENTER
+
+		hbox.pack_start(spinbox, False, True, 0)
+
+		hbox.pack_start(Gtk.Label("Y"), False, True, 0)
+
+		spinbox = Gtk.SpinButton.new_with_range(0, 5000, 1)
+		spinbox.set_value(self.parent.y)
+		spinbox.connect('value-changed', self.settingsPositionYChanged)
+		spinbox.props.valign = Gtk.Align.CENTER
+
+		print self.parent.x, self.parent.y
+
+		hbox.pack_start(spinbox, False, True, 0)
+
 		row.add(hbox)
-		label = Gtk.Label("Text", xalign=0)
+		self.listBox.add(row)
+
+		row = Gtk.ListBoxRow()
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+		
+		hbox.pack_start(Gtk.Label("Text"), False, True, 0)
 
 		entry = Gtk.Entry()
 		entry.connect('changed', self.settingsTextChanged)
-		
-
 		entry.props.valign = Gtk.Align.CENTER
+		entry.set_text(self.parent.label.get_text())
+		
+		hbox.pack_start(entry, True, True, 0)
 
-		entry.set_text(self.label.get_text())
+		row.add(hbox)
+		self.listBox.add(row)
 
-		hbox.pack_start(label, True, True, 0)
-		hbox.pack_start(entry, False, True, 0)
+		row = Gtk.ListBoxRow()
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+		
+		hbox.pack_start(Gtk.Label("Font"), False, True, 0)
 
+		button = Gtk.FontButton.new_with_font(self.parent.label.get_pango_context().get_font_description().to_string())
+		button.set_use_font(True)
+		button.set_use_size(True)
+		button.connect('font-set', self.getSelectedFont)
+		button.props.valign = Gtk.Align.CENTER
+		
+		hbox.pack_start(button, True, True, 0)
+
+		row.add(hbox)
+		self.listBox.add(row)
+
+		row = Gtk.ListBoxRow()
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+		
+		hbox.pack_start(Gtk.Label("Color"), False, True, 0)
+		button = Gtk.ColorButton.new_with_rgba(self.parent.label.get_style().props.context.get_color(Gtk.StateType.NORMAL))
+		button.set_use_alpha(True)
+		button.connect('color-set', self.getSelectedColor)
+		button.props.valign = Gtk.Align.CENTER
+		
+		hbox.pack_start(button, True, True, 0)
+
+		row.add(hbox)
+		self.listBox.add(row)
+
+		row=Gtk.ListBoxRow()
+		self.listBox.hide()
+		row.add(self.listBox)
 		rowArray.append(row)
 
 		return rowArray
 
+	def showOptions(self, widget):
+		if(self.listBox.is_visible()):
+			self.listBox.hide()
+		else:
+			self.listBox.show()
+
 	def settingsTextChanged(self, widget):
-		print "CURSOR MOVED"
-		self.label.set_text(widget.get_text())
-		
+		self.parent.label.set_text(widget.get_text())
+
+	def settingsPositionXChanged(self, widget):
+		self.parent.x=int(widget.get_value())
+		self.parent.parent.fixed.move(self.parent.frame, self.parent.x, self.parent.y)
+
+	def settingsPositionYChanged(self, widget):
+		self.parent.y=int(widget.get_value())
+		self.parent.parent.fixed.move(self.parent.frame, self.parent.x, self.parent.y)
+
+	def getSelectedFont(self, widget):
+		self.parent.updateCss('font', widget.get_font_name())
+		self.parent.applyCss()
+
+	def getSelectedColor(self, widget):
+		rgb=widget.get_color()
+		a=str(widget.get_alpha()/65535.0)
+		self.parent.updateCss('color', 'rgba('+str(rgb.red/257.0)+','+str(rgb.green/257.0)+','+str(rgb.blue/257.0)+','+a+')')
+		print 'rgba('+str(rgb.red)+','+str(rgb.green)+','+str(rgb.blue)+','+a+')'
+		self.parent.applyCss()
+		# self.parent.updateCss('color', widget.get_color_name())
+		# self.parent.applyCss()
+
+	def afterSettingsPlacement(self):
+		self.listBox.hide()

@@ -403,3 +403,5 @@ class Widget(Gtk.Window):
 		for widgetName in self.pantoflaWidgetManager.receivers:
 			customizeDialog.appendSettings(self.pantoflaWidgetManager.receivers[widgetName].settings())
 		customizeDialog.show_all()
+		for widgetName in self.pantoflaWidgetManager.receivers:
+			self.pantoflaWidgetManager.receivers[widgetName].settings.afterSettingsPlacement()

@@ -1,0 +1,13 @@
+[Widget]
+name=Harmattan
+size=230,561
+#1017 gia na paei akribws panw sto allo
+position=1017,108
+borderRadius = 3
+bgColor=0,0,0,0.9
+border=1px solid rgba(255, 255, 255, 0.2)
+
+[Label1, 10, 10]
+text='Hello all'
+font=Ubuntu 20
+#color=rgba(255,255,255,1)
