@@ -2,8 +2,6 @@
 
 from gi.repository import Gtk, Gdk
 
-todoremove=False
-
 class Customize(Gtk.Window):
 	def __init__(self, gadgetName, configurationFile, parent):
 		Gtk.Window.__init__(self, type_hint=Gdk.WindowTypeHint.DIALOG)
@@ -14,7 +12,7 @@ class Customize(Gtk.Window):
 		self.set_hexpand(True)
 		self.set_vexpand(True)
 
-		self.set_size_request(500, 340)
+		self.set_size_request(752, 545)
 
 		self.resetButton = Gtk.Button.new_with_label('Reset')
 		self.resetButton.connect('clicked', self.resetButtonClicked)
@@ -47,7 +45,7 @@ class Customize(Gtk.Window):
 		self.grid.add(self.scrolledWindow)
 		self.grid.attach_next_to(self.lowerBox, self.scrolledWindow, Gtk.PositionType.BOTTOM, 1, 1)
 
-		self.constructListBox()
+		self.constructWidgetSettings()
 
 		self.add(self.grid)
 
@@ -55,23 +53,40 @@ class Customize(Gtk.Window):
 
 		self.connect('destroy', self.destroyed)
 
+		self.controllingWidgets = []
+
 	def destroyed(self, widget):
 		if(self.parent!=None):
 			self.parent.customizeDialogShown=False
 
+	def addControllingWidget(self, widget):
+		self.controllingWidgets.append(widget)
+		self.appendSettings(widget.settings())
+
+	def showWidgets(self):
+		#show all the widgets
+		self.show_all()
+		#do any actions necessary for each one, after showing them (maybe hide some etc)
+		for widget in self.controllingWidgets:
+			widget.settingsObj.afterSettingsPlacement()
+
 	def closeButtonClicked(self, widget):
 		self.destroy()
-		if todoremove:
-			sys.exit(0)
 
 	def resetButtonClicked(self, widget):
+		for child in self.listBox.get_children():
+			self.listBox.remove(child)
+		for widget in self.controllingWidgets:
+			widget.settingsObj.resetSettings()
+			self.appendSettings(widget.settings())
+		self.showWidgets()
 		print 'reset clicked'
 
 	def appendSettings(self, listBoxRows):
 		for row in listBoxRows:
 			self.listBox.add(row)
 
-	def constructListBox(self):
+	def constructWidgetSettings(self):
 		row = Gtk.ListBoxRow()
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
 		row.add(hbox)
@@ -85,9 +100,3 @@ class Customize(Gtk.Window):
 		hbox.pack_start(switch, False, True, 0)
 
 		self.listBox.add(row)
-
-if __name__ == '__main__':
-	todoremove=True
-	import sys
-	Customize('test', 'noconf', None)
-	Gtk.main()

@@ -3,28 +3,7 @@
 from output import *
 import psutil, time, os
 
-dataTypes = [ "B", "K", "M", "G", "T" ]
 timeTypes = [ "s", "m", "h", "d", "w", "y" ]
-
-def dataToNiceString(data, decimalRound=None):
-	data=int(data)
-	maxValue=len(dataTypes)-1
-	niceData=data
-	counter=0
-	while(niceData>=1024):
-		counter+=1
-		niceData/=1024.0
-		if(counter==maxValue):
-			break
-	if(decimalRound==None):
-		decimalRound=1
-		if(int(niceData) < 10):
-			decimalRound=2
-		return str(round(niceData, decimalRound))+dataTypes[counter]
-	elif(decimalRound==0):
-		return str(int(round(niceData, decimalRound)))+dataTypes[counter]
-	else:
-		return str(round(niceData, decimalRound))+dataTypes[counter]
 
 def percentToNiceString(percent, percentDecimals=None, keepTrailing=None):
 	if(percentDecimals==None or percentDecimals==0):
@@ -88,3 +67,6 @@ def upTime():
 
 def systemLoad():
 	return os.getloadavg()[0]
+
+def hddPercent():
+	return psutil.disk_usage('/')[3]

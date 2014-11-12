@@ -9,7 +9,8 @@ from Tools.simplemath import *
 from multiprocessing.pool import ThreadPool
 import psutil
 
-from Tools.hardware import percentToNiceString, dataToNiceString
+from Tools.hardware import percentToNiceString
+from Tools.network import dataToNiceString
 
 class Widget():
 	def __init__(self, name, parentName, parent):

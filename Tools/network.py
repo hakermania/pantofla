@@ -3,15 +3,31 @@
 from output import *
 import psutil, time
 
-pcInterface=''
-interfaceFile='/proc/net/route'
-transmittedFile='/proc/net/dev'
-
-interfaces=['ppp0', 'ppp1', 'wlp2s0', 'wlp2s1', 'wlan0', 'wlan1', 'eth0', 'eth1', 'enp0s0', 'enp0s1']
-
 oldUp=-1; oldDown=-1
 lastTimeGotUp=0
 lastTimeGotDown=0
+
+dataTypes = [ "B", "K", "M", "G", "T" ]
+
+def dataToNiceString(data, decimalRound=None):
+	data=int(data)
+	maxValue=len(dataTypes)-1
+	niceData=data
+	counter=0
+	while(niceData>=1024):
+		counter+=1
+		niceData/=1024.0
+		if(counter==maxValue):
+			break
+	if(decimalRound==None):
+		decimalRound=1
+		if(int(niceData) < 10):
+			decimalRound=2
+		return str(round(niceData, decimalRound))+dataTypes[counter]
+	elif(decimalRound==0):
+		return str(int(round(niceData, decimalRound)))+dataTypes[counter]
+	else:
+		return str(round(niceData, decimalRound))+dataTypes[counter]
 
 def timeNow():
 	return int(round(time.time() * 1000))

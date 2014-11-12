@@ -64,8 +64,7 @@ class Widget(Gtk.Window):
 			y=0
 		else:
 			y=self.currentPosition[1]
-		self.pantoflaWidgetManager.receivers[receiver].x=x
-		self.pantoflaWidgetManager.receivers[receiver].y=y
+		self.pantoflaWidgetManager.receivers[receiver].setPos(x, y)
 		self.fixed.put(self.pantoflaWidgetManager.receivers[receiver].widget(), x, y)
 
 	def commandForReceiver(self, receiver, command, lineCount):
@@ -401,7 +400,5 @@ class Widget(Gtk.Window):
 		customizeDialog = Dialogs.customize.Customize(self.GUIName, self.confFile, self)
 		#add each widget's customization options into the customize dialog
 		for widgetName in self.pantoflaWidgetManager.receivers:
-			customizeDialog.appendSettings(self.pantoflaWidgetManager.receivers[widgetName].settings())
-		customizeDialog.show_all()
-		for widgetName in self.pantoflaWidgetManager.receivers:
-			self.pantoflaWidgetManager.receivers[widgetName].settings.afterSettingsPlacement()
+			customizeDialog.addControllingWidget(self.pantoflaWidgetManager.receivers[widgetName])
+		customizeDialog.showWidgets()
