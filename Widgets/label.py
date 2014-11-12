@@ -380,7 +380,6 @@ class Settings():
 		values = color.split(',')
 		if(len(values)!=4):
 			stderr('Color value seems to be broken')
-			print values
 			return Gdk.RGBA(0, 0, 0, 0)
 		return Gdk.RGBA(int(values[0])/255.0, int(values[1])/255.0, int(values[2])/255.0, float(values[3]))
 
