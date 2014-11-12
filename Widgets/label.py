@@ -61,7 +61,7 @@ class Widget():
 
 	def setPos(self, x, y):
 		self.x=x; self.y=y
-		self.finalSettings['position'] = { 0 : [x,y], 1 : [] }
+		self.finalSettings['position'][0] = [x, y]
 
 	def destroyed(self, widget):
 		for name in self.cssClear:
@@ -71,6 +71,7 @@ class Widget():
 		self.finalSettings = {}
 		self.finalSettings['text'] = { 0 : 'Hello, World!', 1 : '' }
 		self.finalSettings['size'] = { 0 : [0, 0], 1 : [] }
+		self.finalSettings['position'] = { 0 : [0, 0], 1 : [] }
 		self.finalSettings['align'] = { 0 : Gtk.Align.START, 1 : -1 }
 		self.finalSettings['font'] = { 0 : 'Ubuntu 20', 1 : ''}
 		self.finalSettings['color'] = { 0 : 'rgba(255, 255, 255, 1)', 1 : ''}
@@ -143,8 +144,13 @@ class Widget():
 			modified=False
 		else:
 			#function has been modified from the settings
-			self.parent.finalSettings['function'][1]=value
-		if(value=='networkUp'):
+			self.finalSettings['function'][1]=value
+		if(value==''):
+			self.function = None
+			self.niceFunction = None
+			self.functionIndex = -1
+			return
+		elif(value=='networkUp'):
 			from Tools.network import networkUp, dataToNiceString
 			self.function=networkUp
 			self.niceFunction=dataToNiceString
@@ -204,6 +210,8 @@ class Widget():
 	def applySettings(self):
 		self.label.set_text(self.finalSettings['text'][0])
 		self.frame.set_size_request(self.finalSettings['size'][0][0],self.finalSettings['size'][0][1])
+		self.x = self.finalSettings['position'][0][0]; self.y = self.finalSettings['position'][0][1]
+		self.parent.fixed.move(self.frame, self.x, self.y)
 		self.label.set_halign(self.finalSettings['align'][0])
 		self.updateCss('font', self.finalSettings['font'][0])
 		self.updateCss('color', self.finalSettings['color'][0])

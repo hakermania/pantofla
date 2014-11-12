@@ -67,6 +67,9 @@ class Widget(Gtk.Window):
 		self.pantoflaWidgetManager.receivers[receiver].setPos(x, y)
 		self.fixed.put(self.pantoflaWidgetManager.receivers[receiver].widget(), x, y)
 
+	def moveChild(self, widget, x, y):
+		self.fixed.move(widget, x, y)
+
 	def commandForReceiver(self, receiver, command, lineCount):
 		"""Sends the command (property) to the appropriate widget (receiver)"""
 		parts=command.split("=")
