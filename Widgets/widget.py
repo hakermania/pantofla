@@ -36,7 +36,7 @@ class Widget(Gtk.Window):
 		self.currentCss=[]
 
 		self.fixed = Gtk.Fixed()
-		self.fixed.set_name(self.name+"Fixed")
+		self.fixed.set_name(self.name+'Fixed')
 		self.currentPosition=[]
 		self.customizeDialogShown=False
 
@@ -71,13 +71,13 @@ class Widget(Gtk.Window):
 		self.fixed.move(widget, x, y)
 
 	def commandForReceiver(self, receiver, command, lineCount):
-		"""Sends the command (property) to the appropriate widget (receiver)"""
-		parts=command.split("=")
+		'''Sends the command (property) to the appropriate widget (receiver)'''
+		parts=command.split('=')
 		key=parts[0]
 		value=command[len(key)+1:]
 		if receiver not in self.pantoflaWidgetManager.receivers:
 			for widget in self.pantoflaWidgetManager.widgets:
-				if receiver.rstrip("1234567890")==widget.receiver:
+				if receiver.rstrip('1234567890')==widget.receiver:
 					self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name, self)
 					self.pantoflaWidgetManager.receivers[receiver].runCommand(key, value, lineCount, self.confFile)
 					break
@@ -88,7 +88,7 @@ class Widget(Gtk.Window):
 		try:
 			f = open(self.confFile, 'r')
 		except:
-			stderr("Could not open configuration file '"+self.confFile+"'. Default settings will be loaded")
+			stderr('Could not open configuration file ''+self.confFile+''. Default settings will be loaded')
 
 		receiver = None #The receiver of the properties
 		lastReceiver = None
@@ -104,45 +104,45 @@ class Widget(Gtk.Window):
 		for command in f:
 			lineCount+=1
 
-			if(command.startswith("#")):
-				continue #Line starts with '#', so it is a comment
-
 			command=command.rstrip()
 			command=command.lstrip()
 
-			if(command==""):
+			if(command.startswith('#')):
+				continue #Line starts with '#', so it is a comment
+
+			if(command == ''):
 				continue
 
-			if(command.startswith("[")):
+			if(command.startswith('[')):
 				#New receiver
-				if not command.endswith("]"):
-					stderr(self.confFile+", line "+str(lineCount)+": Syntax error: Expected ']' at the end of the line.\nSkipping...")
+				if not command.endswith(']'):
+					stderr(self.confFile+', line '+str(lineCount)+': Syntax error: Expected \']\' at the end of the line.\nSkipping...')
 					continue
 
 				#Add the last receiver to the window, because now there is a new one. The old one has finished its properties
-				if(lastReceiver!="Widget" and lastReceiver!=None):
+				if(lastReceiver!='Widget' and lastReceiver!=None):
 					self.putReceiverToWidget(lastReceiver)
 
 				receiver = command[1:-1]
 
 				#Add the new receiver to the list
-				if(receiver!="Widget"):
+				if(receiver!='Widget'):
 					parts = receiver.split(',')
 					if(len(parts)!=3):
-						stderr(self.confFile+", line "+str(lineCount)+": Syntax error: Expected widget name, position x, position y for the widget initialization.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Syntax error: Expected widget name, position x, position y for the widget initialization.\nSkipping...')
 						continue
 					receiver=parts[0]
 					if(not representsInt(parts[1])):
 						parts[1]=parts[1].rstrip().lstrip()
-						if(parts[1]!="middle"):
-							stderr(self.confFile+", line "+str(lineCount)+": Syntax error: Expected widget name, position x, position y for the widget initialization.\nSkipping...")
+						if(parts[1]!='middle'):
+							stderr(self.confFile+', line '+str(lineCount)+': Syntax error: Expected widget name, position x, position y for the widget initialization.\nSkipping...')
 							continue
 					else:
 						parts[1]=int(parts[1])
 					if(not representsInt(parts[2])):
 						parts[2]=parts[2].rstrip().lstrip()
-						if(parts[2]!="middle"):
-							stderr(self.confFile+", line "+str(lineCount)+": Syntax error: Expected widget name, position x, position y for the widget initialization.\nSkipping...")
+						if(parts[2]!='middle'):
+							stderr(self.confFile+', line '+str(lineCount)+': Syntax error: Expected widget name, position x, position y for the widget initialization.\nSkipping...')
 							continue
 					else:
 						parts[2]=int(parts[2])
@@ -150,7 +150,7 @@ class Widget(Gtk.Window):
 					self.currentPosition=[parts[1], parts[2]]
 					if receiver not in self.pantoflaWidgetManager.receivers:
 						for widget in self.pantoflaWidgetManager.widgets:
-							if receiver.rstrip("1234567890")==widget.receiver:
+							if receiver.rstrip('1234567890')==widget.receiver:
 								self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name, self)
 								lastReceiver=receiver
 								break
@@ -159,7 +159,7 @@ class Widget(Gtk.Window):
 
 			#Remove the spaces between the property and the value
 			if('=' in command):
-				parts=command.split("=")
+				parts=command.split('=')
 				if(len(parts)>=2):
 					parts[0]=parts[0].rstrip()
 					parts[0]=parts[0].lstrip()
@@ -170,49 +170,49 @@ class Widget(Gtk.Window):
 							command+='='+parts[i]
 
 			if(receiver==None):
-				stderr(self.confFile+", line "+str(lineCount)+": Unexpected command: I do not know the receiver of '"+line+"'.\nSkipping...")
+				stderr(self.confFile+', line '+str(lineCount)+': Unexpected command: I do not know the receiver of ''+line+''.\nSkipping...')
 				continue
 
-			if(receiver=="Widget"):
+			if(receiver=='Widget'):
 				#The special receiver Widget
-				if(command.startswith("position=")):
-					parts=command.split("=")
+				if(command.startswith('position=')):
+					parts=command.split('=')
 					if(len(parts)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'position': Format: position = x,y.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'position\': Format: position = x,y.\nSkipping...')
 						continue
-					coords=parts[1].split(",")
+					coords=parts[1].split(',')
 					if(len(coords)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'position': Format: position = x,y.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'position\': Format: position = x,y.\nSkipping...')
 						continue
 
-					if((not representsInt(coords[0]) and coords[0]!="middle") or (not representsInt(coords[1]) and coords[1]!="middle")):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'position': Format: position = x,y.\nSkipping...")
+					if((not representsInt(coords[0]) and coords[0]!='middle') or (not representsInt(coords[1]) and coords[1]!='middle')):
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'position\': Format: position = x,y.\nSkipping...')
 						continue
-					if(coords[0]=="middle"):
+					if(coords[0]=='middle'):
 						coords[0]=Defaults.widget.defaultScreen.get_width()/2-self.get_size()[0]/2
-					if(coords[1]=="middle"):
+					if(coords[1]=='middle'):
 						coords[1]=Defaults.widget.defaultScreen.get_height()/2-self.get_size()[1]/2
 
 					self.move(int(coords[0]), int(coords[1]))
 					positionSet=True
 
-				elif(command.startswith("size=")):
-					parts=command.split("=")
+				elif(command.startswith('size=')):
+					parts=command.split('=')
 					if(len(parts)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'size': Format: size = w,h.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'size\': Format: size = w,h.\nSkipping...')
 						continue
-					size=parts[1].split(",")
+					size=parts[1].split(',')
 					if(len(size)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'size': Format: size = w,h.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'size\': Format: size = w,h.\nSkipping...')
 						continue
 
-					if((not representsInt(size[0]) and size[0]!="half") or (not representsInt(size[1]) and size[1]!="half")):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'size': Format: size = w,h.\nSkipping...")
+					if((not representsInt(size[0]) and size[0]!='half') or (not representsInt(size[1]) and size[1]!='half')):
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'size\': Format: size = w,h.\nSkipping...')
 						continue
 
-					if(size[0]=="half"):
+					if(size[0]=='half'):
 						size[0]=Defaults.widget.defaultScreen.get_width()/2
-					if(size[1]=="half"):
+					if(size[1]=='half'):
 						size[1]=Defaults.widget.defaultScreen.get_height()/2
 
 					self.width = int(size[0])
@@ -222,106 +222,106 @@ class Widget(Gtk.Window):
 					self.set_size_request(self.width, self.height)
 					
 					sizeSet=True
-				elif(command.startswith("name=")):
-					parts=command.split("=")
+				elif(command.startswith('name=')):
+					parts=command.split('=')
 					if(len(parts)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'bgColor\': Format: bgColor = R,G,B,A.\nSkipping...')
 						continue
 					self.GUIName=parts[1]
 					self.GUIName=self.GUIName.rstrip()
 					self.GUIName=self.GUIName.lstrip()
-				elif(command.startswith("bgColor=")):
-					parts=command.split("=")
+				elif(command.startswith('bgColor=')):
+					parts=command.split('=')
 					if(len(parts)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'bgColor\': Format: bgColor = R,G,B,A.\nSkipping...')
 						continue
-					values=parts[1].split(",")
+					values=parts[1].split(',')
 					if(len(values)!=4):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'bgColor\': Format: bgColor = R,G,B,A.\nSkipping...')
 						continue
 
 					if(not representsInts(values[:-1]) or not representsFloat(values[-1])):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'bgColor': Format: bgColor = R,G,B,A.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'bgColor\': Format: bgColor = R,G,B,A.\nSkipping...')
 						continue
 
 					self.set_visual(self.rgbaVisual)
 					self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(int(values[0]), int(values[1]), int(values[2]), float(values[3])))
 
 					backgroundColorSet=True
-				elif(command.startswith("border=")):
-					parts=command.split("=")
+				elif(command.startswith('border=')):
+					parts=command.split('=')
 					if(len(parts)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'border': Format: border = px state color.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'border\': Format: border = px state color.\nSkipping...')
 						return
 
-					self.updateCss("border: "+parts[1]+";")
-				elif(command.startswith("border-top=")):
-					parts=command.split("=")
+					self.updateCss('border: '+parts[1]+';')
+				elif(command.startswith('border-top=')):
+					parts=command.split('=')
 					if(len(parts)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'border-top': Format: border-top = px.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'border-top\': Format: border-top = px.\nSkipping...')
 						return
 
-					self.updateCss("border-top: "+parts[1]+";")
-				elif(command.startswith("border-right=")):
-					parts=command.split("=")
+					self.updateCss('border-top: '+parts[1]+';')
+				elif(command.startswith('border-right=')):
+					parts=command.split('=')
 					if(len(parts)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'border-right': Format: border-right = px.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'border-right\': Format: border-right = px.\nSkipping...')
 						return
 
-					self.updateCss("border-right: "+parts[1]+";")
-				elif(command.startswith("border-bottom=")):
-					parts=command.split("=")
+					self.updateCss('border-right: '+parts[1]+';')
+				elif(command.startswith('border-bottom=')):
+					parts=command.split('=')
 					if(len(parts)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'border-bottom': Format: border-bottom = px.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'border-bottom\': Format: border-bottom = px.\nSkipping...')
 						return
 
-					self.updateCss("border-bottom: "+parts[1]+";")
-				elif(command.startswith("border-left=")):
-					parts=command.split("=")
+					self.updateCss('border-bottom: '+parts[1]+';')
+				elif(command.startswith('border-left=')):
+					parts=command.split('=')
 					if(len(parts)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'border-left': Format: border-left = px.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'border-left\': Format: border-left = px.\nSkipping...')
 						return
 
-					self.updateCss("border-left: "+parts[1]+";")
-				elif(command.startswith("borderRadius=")):
-					parts=command.split("=")
+					self.updateCss('border-left: '+parts[1]+';')
+				elif(command.startswith('borderRadius=')):
+					parts=command.split('=')
 					if(len(parts)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'borderRadius': Format: borderRadius = pixels/percentage.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'borderRadius\': Format: borderRadius = pixels/percentage.\nSkipping...')
 						continue
 
 					isPercentage=False
 
-					if(parts[1].endswith("%")):
+					if(parts[1].endswith('%')):
 						if(representsInt(parts[1][:-1])):
 							isPercentage=True
 						else:
-							stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'borderRadius': Format: borderRadius = pixels/percentage.\nSkipping...")
+							stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'borderRadius\': Format: borderRadius = pixels/percentage.\nSkipping...')
 							continue
 					elif not representsInt(parts[1]):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'borderRadius': Format: borderRadius = pixels/percentage.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'borderRadius\': Format: borderRadius = pixels/percentage.\nSkipping...')
 						continue
 
 					if not isPercentage:
-						self.updateCss("border-radius: "+parts[1]+"px;")
+						self.updateCss('border-radius: '+parts[1]+'px;')
 					else:
-						self.updateCss("border-radius: "+parts[1]+";")
+						self.updateCss('border-radius: '+parts[1]+';')
 					
-				elif(command.startswith("updateInterval=")):
-					parts=command.split("=")
+				elif(command.startswith('updateInterval=')):
+					parts=command.split('=')
 					if(len(parts)!=2):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'updateInterval': Format: updateInterval = ms.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'updateInterval\': Format: updateInterval = ms.\nSkipping...')
 						continue
 					if(not representsInt(parts[1])):
-						stderr(self.confFile+", line "+str(lineCount)+": Badly formatted command 'updateInterval': Format: updateInterval = ms.\nSkipping...")
+						stderr(self.confFile+', line '+str(lineCount)+': Badly formatted command \'updateInterval\': Format: updateInterval = ms.\nSkipping...')
 						continue
 					if(int(parts[1])<800):
-						stderr(self.confFile+", line "+str(lineCount)+": Too small interval set for command 'updateInterval': Interval cannot be set less than 800. Setting to 800.")
+						stderr(self.confFile+', line '+str(lineCount)+': Too small interval set for command \'updateInterval\': Interval cannot be set less than 800. Setting to 800.')
 						parts[1]=800
 					self.pantoflaWidgetManager.setUpdateInterval(int(parts[1]))
 
 					updateIntervalSet=True
 				else:
-					stderr(self.confFile+", line "+str(lineCount)+": Unknown command '"+line+"'")
+					stderr(self.confFile+', line '+str(lineCount)+': Unknown command ''+line+''')
 			else:
 				#The receiver is not 'Widget'
 				self.commandForReceiver(receiver, command, lineCount)
@@ -329,7 +329,7 @@ class Widget(Gtk.Window):
 		f.close()
 
 		#Add the last receiver to the window. This is the last receiver as the file has ended
-		if(lastReceiver!="Widget" and lastReceiver!=None):
+		if(lastReceiver!='Widget' and lastReceiver!=None):
 			self.putReceiverToWidget(lastReceiver)
 
 		#Set the default values to the ones that have to be set
@@ -357,6 +357,25 @@ class Widget(Gtk.Window):
 		GObject.timeout_add(1000, self.checkWidgetsReady)
 		self.checkWidgetsReady()
 
+	def writeSettingsFile(self):
+		#get the settings from each widget and save them to the configuration file
+		try:
+			confF = open(self.confFile, 'w');
+		except:
+			stderr('Could not write to '+self.confFile+' the applied changes!')
+			return False
+
+		for receiver in self.pantoflaWidgetManager.receivers:
+			confF.write('['+receiver+','+str(self.pantoflaWidgetManager.receivers[receiver].x)+','+str(self.pantoflaWidgetManager.receivers[receiver].y)+']')
+			confF.write('\n')
+			#copy over only the first array item, aka only the normal preserved value, not the (possibly) edited one
+			for key in self.pantoflaWidgetManager.receivers[receiver].settingsObj.settingsToWrite:
+				print type(key), type(self.pantoflaWidgetManager.receivers[receiver].settingsObj.settingsToWrite[key])
+				confF.write(key+' = '+self.pantoflaWidgetManager.receivers[receiver].settingsObj.settingsToWrite[key])
+				confF.write('\n')
+		confF.close()
+		return True
+
 	def checkWidgetsReady(self):
 		atLeastOneNotReady=False
 		for receiver in self.pantoflaWidgetManager.receivers:
@@ -375,20 +394,20 @@ class Widget(Gtk.Window):
 		finalString=''
 		for css in self.currentCss:
 			finalString+=css
-		self.styleProvider.load_from_data("""
-			#"""+self.name+""" {
-				"""+finalString+"""
+		self.styleProvider.load_from_data('''
+			#'''+self.name+''' {
+				'''+finalString+'''
 			}
-		""")
+		''')
 
 	def createMenu(self):
 		self.menu=Gtk.Menu()
-		item = Gtk.MenuItem.new_with_mnemonic("Customize")
+		item = Gtk.MenuItem.new_with_mnemonic('Customize')
 		item.connect('activate', self.showCustomizeDialog)
 		self.menu.append(item)
 		self.menu.show_all()
 
-		self.connect("button_press_event", self.popupHandler, self.menu)
+		self.connect('button_press_event', self.popupHandler, self.menu)
 		
 	def popupHandler(self, widget, event, menu):
 		if( event.button != Gdk.BUTTON_SECONDARY ):

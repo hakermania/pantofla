@@ -38,13 +38,13 @@ class Widget():
 		self.frame.connect('destroy', self.destroyed)
 		self.label.connect('size-allocate', self.getSize)
 
-		self.readyShow=True
+		self.readyShow = True
 		self.function = None
 		self.functionIndex = -1
 		self.niceFunction = None
 		self.functionData = None
 		self.pool = None
-		self.cssApplied=False
+		self.cssApplied = False
 
 	def getSize(self, widget, allocation):
 		if not self.cssApplied:
@@ -60,27 +60,26 @@ class Widget():
 		widget.disconnect_by_func(self.getSize)
 
 	def setPos(self, x, y):
-		self.x=x; self.y=y
-		self.finalSettings['position'][0] = [x, y]
+		self.x=x; self.y=y #todo remove pos
 
 	def destroyed(self, widget):
 		for name in self.cssClear:
 			self.styleProvider.load_from_data('#'+name+' { } ')
 
 	def initializeSettings(self):
+		#first item is the normal value, second is the edited one (to allow reset values, we need to keep both the original and the edited)
 		self.finalSettings = {}
-		self.finalSettings['text'] = { 0 : 'Hello, World!', 1 : '' }
-		self.finalSettings['size'] = { 0 : [0, 0], 1 : [] }
-		self.finalSettings['position'] = { 0 : [0, 0], 1 : [] }
-		self.finalSettings['align'] = { 0 : Gtk.Align.START, 1 : -1 }
-		self.finalSettings['font'] = { 0 : 'Ubuntu 20', 1 : ''}
-		self.finalSettings['color'] = { 0 : 'rgba(255, 255, 255, 1)', 1 : ''}
-		self.finalSettings['border'] = { 0 : 'none', 1 : ''}
-		self.finalSettings['border-top'] = { 0 : 'none', 1 : ''}
-		self.finalSettings['border-right'] = { 0 : 'none', 1 : ''}
-		self.finalSettings['border-bottom'] = { 0 : 'none', 1 : ''}
-		self.finalSettings['border-left'] = { 0 : 'none', 1 : ''}
-		self.finalSettings['function'] = { 0 : '', 1 : ''}
+		self.finalSettings['text'] = ['Hello, World!', None]
+		self.finalSettings['size'] = [[0, 0], None]
+		self.finalSettings['align'] = [Gtk.Align.START, None]
+		self.finalSettings['font'] = ['Ubuntu 20', None]
+		self.finalSettings['color'] = ['rgba(255, 255, 255, 1)', None]
+		self.finalSettings['border'] = ['none', None]
+		self.finalSettings['border-top'] = ['none', None]
+		self.finalSettings['border-right'] = ['none', None]
+		self.finalSettings['border-bottom'] = ['none', None]
+		self.finalSettings['border-left'] = ['none', None]
+		self.finalSettings['function'] = ['', None]
 
 	def update(self):
 		if(self.function==None):
@@ -98,19 +97,15 @@ class Widget():
 
 	def runCommand(self, key, value, lineCount, configurationFile):
 		if(key=='text'):
-			if(not (value.startswith('\'') and value.endswith('\''))):
-				stderr(configurationFile+', line '+str(lineCount)+': Badly formatted command "text": Format: text = "text".\nSkipping...')
-				return
-
-			self.finalSettings['text'][0] = value[1:-1] #Remove the ''
+			self.finalSettings['text'][0] = value
 		elif(key=='size'):
 			size=value.split(',')
 			self.finalSettings['size'][0] = [int(size[0]), int(size[1])]
 		elif(key=='align'):
 			if(value=='right'):
-				self.finalSettings['align'] = { 0 : Gtk.Align.END, 1 : -1 }
+				self.finalSettings['align'][0] = Gtk.Align.END
 			elif(value=='left'):
-				self.finalSettings['align'] = { 0 : Gtk.Align.START, 1 : -1 }
+				self.finalSettings['align'][0] = Gtk.Align.START
 			else:
 				stderr(configurationFile+', line '+str(lineCount)+': Badly formatted command "align": Format: align = left/right.\nSkipping...')
 				return
@@ -210,7 +205,6 @@ class Widget():
 	def applySettings(self):
 		self.label.set_text(self.finalSettings['text'][0])
 		self.frame.set_size_request(self.finalSettings['size'][0][0],self.finalSettings['size'][0][1])
-		self.x = self.finalSettings['position'][0][0]; self.y = self.finalSettings['position'][0][1]
 		self.parent.fixed.move(self.frame, self.x, self.y)
 		self.label.set_halign(self.finalSettings['align'][0])
 		self.updateCss('font', self.finalSettings['font'][0])
@@ -286,7 +280,7 @@ class Settings():
 		hbox.pack_start(Gtk.Label('X'), False, True, 0)
 
 		spinbox = Gtk.SpinButton.new_with_range(0, 5000, 1)
-		spinbox.set_value(self.parent.finalSettings['position'][0][0])
+		spinbox.set_value(self.parent.x)
 		spinbox.connect('value-changed', self.settingsPositionXChanged)
 		spinbox.props.valign = Gtk.Align.CENTER
 
@@ -295,7 +289,7 @@ class Settings():
 		hbox.pack_start(Gtk.Label('Y'), False, True, 0)
 
 		spinbox = Gtk.SpinButton.new_with_range(0, 5000, 1)
-		spinbox.set_value(self.parent.finalSettings['position'][0][1])
+		spinbox.set_value(self.parent.y)
 		spinbox.connect('value-changed', self.settingsPositionYChanged)
 		spinbox.props.valign = Gtk.Align.CENTER
 
@@ -389,7 +383,8 @@ class Settings():
 		if(len(values)!=4):
 			stderr('Color value seems to be broken')
 			return Gdk.RGBA(0, 0, 0, 0)
-		return Gdk.RGBA(int(values[0])/255.0, int(values[1])/255.0, int(values[2])/255.0, float(values[3]))
+		print values
+		return Gdk.RGBA(int(float(values[0]))/255.0, int(float(values[1]))/255.0, int(float(values[2]))/255.0, float(values[3]))
 
 	def showOptions(self, widget):
 		if(self.listBox.is_visible()):
@@ -452,12 +447,10 @@ class Settings():
 
 	def settingsPositionXChanged(self, widget):
 		self.parent.x=int(widget.get_value())
-		self.parent.finalSettings['position'][1] = [self.parent.x, self.parent.y]
 		self.parent.parent.fixed.move(self.parent.frame, self.parent.x, self.parent.y)
 
 	def settingsPositionYChanged(self, widget):
 		self.parent.y=int(widget.get_value())
-		self.parent.finalSettings['position'][1] = [self.parent.x, self.parent.y]
 		self.parent.parent.fixed.move(self.parent.frame, self.parent.x, self.parent.y)
 
 	def getSelectedFont(self, widget):
@@ -485,6 +478,30 @@ class Settings():
 
 	def resetSettings(self):
 		for key in self.parent.finalSettings:
-			self.parent.finalSettings[key][1] = self.parent.finalSettings[key][0]
+			self.parent.finalSettings[key][1] = None
 		self.parent.applySettings();
 		self.parent.applyCss();
+
+	def stringifySettings(self, key, value):
+		"""Converts the settings of the widget to the string value that has to be stored inside the configuration file"""
+		if type(value) is str:
+			return value
+
+		if type(value) is list:
+			return ','.join(str(x) for x in value)
+
+		return value
+
+	def saveSettings(self):
+
+		self.settingsToWrite = { }
+
+		for key in self.parent.finalSettings:
+			if self.parent.finalSettings[key][1] != None:
+				#key has been edited, copy it over and reset the edited value to None
+				self.parent.finalSettings[key][0] = self.parent.finalSettings[key][1]
+				self.parent.finalSettings[key][1] = None
+
+				self.settingsToWrite[key] = self.stringifySettings(key, self.parent.finalSettings[key][0])
+
+		self.parent.applySettings()

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from gi.repository import Gtk, Gdk
+from Tools.output import *
 
 class Customize(Gtk.Window):
 	def __init__(self, gadgetName, configurationFile, parent):
@@ -80,7 +81,8 @@ class Customize(Gtk.Window):
 			widget.settingsObj.afterSettingsPlacement()
 
 	def closeButtonClicked(self, widget):
-		self.resetButtonClicked(self.resetButton)
+		for widget in self.controllingWidgets:
+			widget.settingsObj.resetSettings()
 		self.destroy()
 
 	def resetButtonClicked(self, widget):
@@ -92,7 +94,18 @@ class Customize(Gtk.Window):
 		self.showWidgets()
 
 	def saveButtonClicked(self, widget):
-		print 'save button clicked'
+		print 'save button clicked' #todo remove
+		for widget in self.controllingWidgets:
+			print 'saving settings...'
+			widget.settingsObj.saveSettings()
+		print 'writing to file....'
+		if not self.parent.writeSettingsFile():
+			#todo show error messagebox
+			stderr('PARENT reported couldn\'t write to configuration file')
+			return
+		self.parent.applyConfigurationFile()
+		print 'All ok!'
+
 
 	def appendSettings(self, listBoxRows):
 		for row in listBoxRows:

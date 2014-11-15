@@ -19,31 +19,4 @@ class WidgetManager():
 		self.widgets.append({"config" : confFile, "widget" : widget, "previousEditTime" : editTime, "currentEditTime" : editTime})
 
 	def run(self):
-		self.monitorConfigChanges();
 		Gtk.main()
-
-	def monitorConfigChanges(self):
-		GObject.timeout_add(200, self.checkConfigChange)
-
-	def checkConfigChange(self):
-		toRemoveIndexes=[]
-		removedConfs=[]
-		addedIndex=0
-		for widget in self.widgets:
-			widget["currentEditTime"]=os.stat(widget["config"]).st_mtime
-			if(widget["previousEditTime"]!=widget["currentEditTime"]):
-				toRemoveIndexes.append(addedIndex)
-				removedConfs.append({"config" : widget["config"], "name" : widget["widget"].name})
-				widget["widget"].destroy()
-				widget["widget"].pantoflaWidgetManager.receivers=[]
-				widget["widget"].pantoflaWidgetManager=0
-			addedIndex+=1
-				
-		if(len(toRemoveIndexes) > 0):
-			print "Config changed!"
-			counter=len(toRemoveIndexes)
-			for i in reversed(toRemoveIndexes):
-				counter-=1
-				self.widgets.pop(i)
-				self.add(Widgets.widget.Widget(removedConfs[counter]["name"], removedConfs[counter]["config"]), removedConfs[counter]["config"])
-		return True
