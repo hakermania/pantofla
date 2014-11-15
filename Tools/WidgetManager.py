@@ -8,15 +8,18 @@ import Widgets.widget
 class WidgetManager():
 	"""
 	Manages the Widgets (or Gadgets) placed on the desktop.
-	Each Gadget can have many SubWidgets.
+	Each Gadget can have many SubWidgets (Labels etc).
 	"""
 	def __init__(self):
 		self.widgets=[]
 
 	def add(self, widget, confFile):
-		editTime=os.stat(confFile).st_mtime
+		pass
+		return
+		#Todo, do something here?
+		#editTime=os.stat(confFile).st_mtime
 		#[config file path, GtkWidget, previous check last edit time, current check last edit time]
-		self.widgets.append({"config" : confFile, "widget" : widget, "previousEditTime" : editTime, "currentEditTime" : editTime})
+		#self.widgets.append({"config" : confFile, "widget" : widget, "previousEditTime" : editTime, "currentEditTime" : editTime})
 
 	def run(self):
 		Gtk.main()

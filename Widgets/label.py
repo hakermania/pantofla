@@ -79,7 +79,7 @@ class Widget():
 		self.finalSettings['border-right'] = ['none', None]
 		self.finalSettings['border-bottom'] = ['none', None]
 		self.finalSettings['border-left'] = ['none', None]
-		self.finalSettings['function'] = ['', None]
+		self.finalSettings['function'] = [None, None]
 
 	def update(self):
 		if(self.function==None):
@@ -88,6 +88,7 @@ class Widget():
 			#first time claiming data
 			self.functionData=self.pool.apply_async(self.function)
 		elif(self.functionData.ready()):
+			self.readyShow = True
 			#data is ready for presenation
 			if(self.niceFunction==0):
 				self.label.set_text(str(self.functionData.get()))
@@ -135,17 +136,12 @@ class Widget():
 			stderr(configurationFile+', line '+str(lineCount)+': Unknown command.')
 
 	def enableFunction(self, value, modified=None):
-		if(modified==None):
-			modified=False
+		if(modified == None):
+			modified = False
 		else:
 			#function has been modified from the settings
-			self.finalSettings['function'][1]=value
-		if(value==''):
-			self.function = None
-			self.niceFunction = None
-			self.functionIndex = -1
-			return
-		elif(value=='networkUp'):
+			self.finalSettings['function'][1] = value
+		if(value=='networkUp'):
 			from Tools.network import networkUp, dataToNiceString
 			self.function=networkUp
 			self.niceFunction=dataToNiceString
@@ -185,8 +181,16 @@ class Widget():
 			self.function=upTime
 			self.niceFunction=timeToNiceString
 			self.functionIndex=7
-		self.functionData=None
+		else:
+			self.function = None
+			self.niceFunction = None
+			self.functionIndex = -1
+			return False
+
+		self.readyShow = False #functions do some time to gather data
+		self.functionData = None
 		self.pool = ThreadPool(processes=1)
+		return True
 
 	def updateCss(self, key, value, name=None):
 		if(name is None):
@@ -203,7 +207,9 @@ class Widget():
 
 
 	def applySettings(self):
-		self.label.set_text(self.finalSettings['text'][0])
+		if not self.enableFunction(self.finalSettings['function'][0]):
+			#no function enabled, so add the text instead :D
+			self.label.set_text(self.finalSettings['text'][0])
 		self.frame.set_size_request(self.finalSettings['size'][0][0],self.finalSettings['size'][0][1])
 		self.parent.fixed.move(self.frame, self.x, self.y)
 		self.label.set_halign(self.finalSettings['align'][0])
@@ -214,7 +220,7 @@ class Widget():
 		self.updateCss('border-right', self.finalSettings['border-right'][0])
 		self.updateCss('border-bottom', self.finalSettings['border-bottom'][0])
 		self.updateCss('border-left', self.finalSettings['border-left'][0])
-		self.enableFunction(self.finalSettings['function'][0])
+		
 
 	def applyCss(self):
 		finalString=''
@@ -309,7 +315,7 @@ class Settings():
 		self.switch.props.valign = Gtk.Align.CENTER
 		self.switch.connect('notify::active', self.functionStateChanged)
 
-		if(self.parent.finalSettings['function'][0]!=''):
+		if(self.parent.finalSettings['function'][0] != None):
 			#the label listens to some function
 			self.switch.set_state(True)
 		else:
@@ -400,25 +406,26 @@ class Settings():
 		self.setParentFunction()
 		
 	def setParentFunction(self):
-		if(self.parent.functionIndex==0):
+		if(self.parent.functionIndex == 0):
 			self.parent.enableFunction('networkUp', True)
-		elif(self.parent.functionIndex==1):
+		elif(self.parent.functionIndex == 1):
 			self.parent.enableFunction('networkDown', True)
-		elif(self.parent.functionIndex==2):
+		elif(self.parent.functionIndex == 2):
 			self.parent.enableFunction('networkTotalUp', True)
-		elif(self.parent.functionIndex==3):
+		elif(self.parent.functionIndex == 3):
 			self.parent.enableFunction('networkTotalDown', True)
-		elif(self.parent.functionIndex==4):
+		elif(self.parent.functionIndex == 4):
 			self.parent.enableFunction('cpuPercent', True)
-		elif(self.parent.functionIndex==5):
+		elif(self.parent.functionIndex == 5):
 			self.parent.enableFunction('ramPercent', True)
-		elif(self.parent.functionIndex==6):
+		elif(self.parent.functionIndex == 6):
 			self.parent.enableFunction('hddPercent', True)
-		elif(self.parent.functionIndex==7):
+		elif(self.parent.functionIndex == 7):
 			self.parent.enableFunction('upTime', True)
 		else:
-			self.parent.function=None
-			self.parent.functionIndex=-1
+			self.parent.function = None
+			self.parent.functionIndex = -1
+			self.parent.finalSettings['function'][0] = self.parent.finalSettings['function'][1] = None
 			self.parent.label.set_text(self.textEntry.get_text())
 		self.parent.update()
 
