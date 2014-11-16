@@ -19,3 +19,6 @@ def representsFloat(s):
 		return True
 	except ValueError:
 		return False
+
+def rgbaToValues(color):
+	return color.replace('rgba', '').replace('(', '').replace(')', '').replace(' ', '').split(',')

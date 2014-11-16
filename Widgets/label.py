@@ -23,6 +23,7 @@ class Widget():
 
 		self.styleProvider=Gtk.CssProvider()
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
 		self.currentCss={}
 
 		self.frame=Gtk.Frame()
@@ -384,8 +385,7 @@ class Settings():
 		return rowArray
 
 	def colorValueToRgba(self, color):
-		color = color.replace('rgba', '').replace('(', '').replace(')', '').replace(' ', '')
-		values = color.split(',')
+		values = rgbaToValues(color)
 		if(len(values)!=4):
 			stderr('Color value seems to be broken')
 			return Gdk.RGBA(0, 0, 0, 0)
@@ -504,6 +504,7 @@ class Settings():
 		self.settingsToWrite = { }
 
 		for key in self.parent.finalSettings:
+			#todo write all values, not only the modified ones, wtf are you doing man
 			if self.parent.finalSettings[key][1] != None:
 				#key has been edited, copy it over and reset the edited value to None
 				self.parent.finalSettings[key][0] = self.parent.finalSettings[key][1]
