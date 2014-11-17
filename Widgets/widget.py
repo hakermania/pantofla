@@ -6,6 +6,7 @@ import Defaults.widget, Tools.SubWidgetManager, Dialogs.customize
 
 from Tools.output import *
 from Tools.simplemath import *
+from Tools.operations import *
 
 class Widget(Gtk.Window):
 
@@ -23,8 +24,6 @@ class Widget(Gtk.Window):
 		self.name = name
 		self.GUIName = name
 		self.set_wmclass(Defaults.widget.wmClass, Defaults.widget.wmClass)
-		self.set_keep_below(True)
-		#self.set_sensitive(False)
 
 		self.rgbaVisual = self.get_screen().get_rgba_visual()
 
@@ -48,16 +47,22 @@ class Widget(Gtk.Window):
 
 		self.initializeSettings()
 
+		self.connect('check-resize', self.setDimensions)
+
 		self.applyConfigurationFile()
 
 		self.set_resizable(False)
+		self.set_keep_below(True)
+
+	def setDimensions(self, widget):
+		self.width, self.height = widget.get_size_request()
 
 	def initializeSettings(self):
 		self.finalSettings = {}
 		self.finalSettings['size'] = [[Defaults.widget.defaultWidth, Defaults.widget.defaultHeight], None]
 		self.finalSettings['position'] = [[Defaults.widget.defaultScreen.get_width()/2-self.get_size()[0]/2, Defaults.widget.defaultScreen.get_height()/2-self.get_size()[1]/2], None]
 		self.finalSettings['name'] = ['PantoflaWidget', None]
-		self.finalSettings['background-color'] = ['rgba(0,0,0,0.5)', None]
+		self.finalSettings['background-color'] = ['rgba(0, 0, 0, 0.5)', None]
 		self.finalSettings['border'] = ['none', None]
 		self.finalSettings['border-top'] = ['none', None]
 		self.finalSettings['border-right'] = ['none', None]
@@ -72,13 +77,13 @@ class Widget(Gtk.Window):
 		self.set_default_size(self.width, self.height)
 		self.set_size_request(self.width, self.height)
 
-		self.move(self.finalSettings['position'][0][0], self.finalSettings['position'][0][1])
+		self.x = self.finalSettings['position'][0][0]; self.y = self.finalSettings['position'][0][1];
+		print 'APPLYING SETTINGS AND MOVING', self.x, self.y
+		self.move(self.x, self.y)
 
 		self.GUIName = self.finalSettings['name'][0]
 
-		values = rgbaToValues(self.finalSettings['background-color'][0])
-		self.set_visual(self.rgbaVisual)
-		self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(int(values[0]), int(values[1]), int(values[2]), float(values[3])))
+		self.setBackgroundColorFrom(self.finalSettings['background-color'][0])
 
 		self.updateCss('border', self.finalSettings['border'][0])
 		self.updateCss('border-top', self.finalSettings['border-top'][0])
@@ -89,6 +94,10 @@ class Widget(Gtk.Window):
 
 		self.pantoflaWidgetManager.setUpdateInterval(self.finalSettings['update-interval'][0])
 
+	def setBackgroundColorFrom(self, cssColor):
+		values = rgbaToValues(cssColor)
+		self.set_visual(self.rgbaVisual)
+		self.override_background_color(Gtk.StateFlags.NORMAL, Gdk.RGBA(float(values[0])/255.0, float(values[1])/255.0, float(values[2])/255.0, float(values[3])))
 
 	def putReceiverToWidget(self, receiver):
 		x, y = 0, 0
@@ -102,6 +111,7 @@ class Widget(Gtk.Window):
 			y=0
 		else:
 			y=self.currentPosition[1]
+		print 'putting', receiver, 'to widget'
 		self.pantoflaWidgetManager.receivers[receiver].setPos(x, y)
 		self.fixed.put(self.pantoflaWidgetManager.receivers[receiver].widget(), x, y)
 
@@ -125,8 +135,9 @@ class Widget(Gtk.Window):
 			if(coords[1]=='middle'):
 				coords[1]=Defaults.widget.defaultScreen.get_height()/2-self.get_size()[1]/2
 
-
+			print 'Via reading the settings file, I concluded that position is', int(coords[0]), int(coords[1])
 			self.finalSettings['position'][0] = [ int(coords[0]), int(coords[1]) ]
+			print self.finalSettings['position']
 
 		elif(key == 'size'):
 			size=value.split(',')
@@ -161,13 +172,13 @@ class Widget(Gtk.Window):
 		elif(key == 'border-radius'):
 			self.finalSettings['border-radius'][0] = value
 		elif(key == 'update-interval'):
-			if(not representsInt(parts[1])):
+			if(not representsInt(value)):
 				stderr(configurationFile+', line '+str(lineCount)+': Badly formatted command \'update-interval\': Format: update-interval = ms.\nSkipping...')
 				return
 			if(int(value)<800):
 				stderr(configurationFile+', line '+str(lineCount)+': Too small interval set for command \'update-interval\': Interval cannot be set less than 800. Setting to 800.')
 				value=800
-			self.finalSettings['update-interval'] = int(value)
+			self.finalSettings['update-interval'][0] = int(value)
 		else:
 			stderr(configurationFile+', line '+str(lineCount)+': Unknown command.')
 
@@ -176,6 +187,9 @@ class Widget(Gtk.Window):
 		parts=command.split('=')
 		key=parts[0]
 		value=command[len(key)+1:]
+
+		if(value == ''):
+			value = None
 
 		if receiver == 'Widget':
 			#the widget itself is the receiver of the command
@@ -187,7 +201,8 @@ class Widget(Gtk.Window):
 		if receiver not in self.pantoflaWidgetManager.receivers:
 			for widget in self.pantoflaWidgetManager.widgets:
 				if receiver.rstrip('1234567890')==widget.receiver:
-					self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name, self)
+					if not receiver in self.pantoflaWidgetManager.receivers:
+						self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name, self)
 					self.pantoflaWidgetManager.receivers[receiver].runCommand(key, value, lineCount, self.confFile)
 					break
 		else:
@@ -254,8 +269,9 @@ class Widget(Gtk.Window):
 					if receiver not in self.pantoflaWidgetManager.receivers:
 						for widget in self.pantoflaWidgetManager.widgets:
 							if receiver.rstrip('1234567890')==widget.receiver:
-								self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name, self)
-								lastReceiver=receiver
+								if not receiver in self.pantoflaWidgetManager.receivers:
+									self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name, self)
+								lastReceiver = receiver
 								break
 
 				continue
@@ -264,9 +280,8 @@ class Widget(Gtk.Window):
 			if('=' in command):
 				parts=command.split('=')
 				if(len(parts)>=2):
-					parts[0]=parts[0].rstrip()
-					parts[0]=parts[0].lstrip()
-					parts[1]=parts[1].lstrip()
+					parts[0]=parts[0].rstrip().lstrip()
+					parts[1]=parts[1].rstrip().lstrip()
 					command=parts[0]+'='+parts[1]
 					if(len(parts)>2):
 						for i in range(2, len(parts)):
@@ -305,13 +320,35 @@ class Widget(Gtk.Window):
 
 		#write self settings first
 
+		confF.write('[Widget]')
+		confF.write('\n')
+
+		for key in self.settingsObj.settingsToWrite:
+			confF.write(key+' = '+self.settingsObj.settingsToWrite[key])
+			confF.write('\n')
+			print key, '=', self.settingsObj.settingsToWrite[key]
+		self.settingsObj = None
+
 		for receiver in self.pantoflaWidgetManager.receivers:
-			confF.write('['+receiver+','+str(self.pantoflaWidgetManager.receivers[receiver].x)+','+str(self.pantoflaWidgetManager.receivers[receiver].y)+']')
+			confF.write('\n')
+			strToWrite = ['', '']
+			if self.pantoflaWidgetManager.receivers[receiver].hMid:
+				strToWrite[0] = 'middle'
+			else:
+				strToWrite[0] = str(int(float(self.pantoflaWidgetManager.receivers[receiver].x)))
+
+			if self.pantoflaWidgetManager.receivers[receiver].vMid:
+				strToWrite[1] = 'middle'
+			else:
+				strToWrite[1] = str(int(float(self.pantoflaWidgetManager.receivers[receiver].y)))
+
+			confF.write('['+receiver+' ,'+','.join(strToWrite)+']')
 			confF.write('\n')
 			#copy over only the first array item, aka only the normal preserved value, not the (possibly) edited one
 			for key in self.pantoflaWidgetManager.receivers[receiver].settingsObj.settingsToWrite:
 				confF.write(key+' = '+self.pantoflaWidgetManager.receivers[receiver].settingsObj.settingsToWrite[key])
 				confF.write('\n')
+			self.pantoflaWidgetManager.receivers[receiver].settingsObj = None
 		confF.close()
 		return True
 
@@ -324,6 +361,7 @@ class Widget(Gtk.Window):
 			return True #call again until ready
 		else:
 			self.show()
+			self.set_keep_below(True)
 			return False #all widgets ready
 
 	def updateCss(self, key, value, name=None):
@@ -369,9 +407,137 @@ class Widget(Gtk.Window):
 		if self.customizeDialogShown:
 			return
 		#construct the customize dialog
-		self.customizeDialogShown=True
+		self.customizeDialogShown = True
 		customizeDialog = Dialogs.customize.Customize(self.GUIName, self.confFile, self)
 		#add each widget's customization options into the customize dialog
 		for widgetName in self.pantoflaWidgetManager.receivers:
 			customizeDialog.addControllingWidget(self.pantoflaWidgetManager.receivers[widgetName])
 		customizeDialog.showWidgets()
+
+	def settings(self):
+		self.settingsObj = Settings(self)
+		return self.settingsObj.getSettingsWidgets()
+
+class Settings():
+	def __init__(self, parent):
+		self.parent=parent
+
+	def getSettingsWidgets(self):
+
+		#One row is the Label button to show/hide the options of it and the other row is another listbox with the options
+		rowArray = []
+
+		#listbox to hold the settings
+		self.listBox = Gtk.ListBox()
+		self.listBox.set_hexpand(True)
+		self.listBox.set_vexpand(True)
+		self.listBox.set_selection_mode(Gtk.SelectionMode.NONE)
+
+		row = Gtk.ListBoxRow()
+
+		button = Gtk.Button.new_with_label('')
+		button.get_child().set_markup('<b>-- '+self.parent.GUIName+' Widget --</b>')
+		button.set_hexpand(True)
+		button.connect('clicked', self.showOptions)
+
+		row.add(button)
+		rowArray.append(row)
+
+		row = Gtk.ListBoxRow()
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+		
+		label = Gtk.Label('Position', xalign=0)
+		hbox.pack_start(label, True, True, 0)
+
+		hbox.pack_start(Gtk.Label('X'), False, True, 0)
+
+		spinbox = Gtk.SpinButton.new_with_range(0, 5000, 1)
+		spinbox.set_value(self.parent.x)
+		spinbox.connect('value-changed', self.settingsPositionXChanged)
+		spinbox.props.valign = Gtk.Align.CENTER
+
+		hbox.pack_start(spinbox, False, True, 0)
+
+		hbox.pack_start(Gtk.Label('Y'), False, True, 0)
+
+		spinbox = Gtk.SpinButton.new_with_range(0, 5000, 1)
+		spinbox.set_value(self.parent.y)
+		spinbox.connect('value-changed', self.settingsPositionYChanged)
+		spinbox.props.valign = Gtk.Align.CENTER
+
+		hbox.pack_start(spinbox, False, True, 0)
+
+		row.add(hbox)
+		self.listBox.add(row)
+
+		row = Gtk.ListBoxRow()
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+		
+		hbox.pack_start(Gtk.Label('Background color'), False, True, 0)
+		button = Gtk.ColorButton.new_with_rgba(colorValueToRgba(self.parent.finalSettings['background-color'][0]))
+		button.set_use_alpha(True)
+		button.connect('color-set', self.getSelectedColor)
+		button.props.valign = Gtk.Align.CENTER
+		
+		hbox.pack_start(button, True, True, 0)
+
+		row.add(hbox)
+		self.listBox.add(row)
+
+		row = Gtk.ListBoxRow()
+		self.listBox.hide()
+		row.add(self.listBox)
+		rowArray.append(row)
+
+		return rowArray
+
+	def showOptions(self, widget):
+		if(self.listBox.is_visible()):
+			self.listBox.hide()
+		else:
+			self.listBox.show()
+
+	def getSelectedColor(self, widget):
+		rgb=widget.get_color()
+		a=str(widget.get_alpha()/65535.0)
+		value = 'rgba('+str(rgb.red/257.0)+', '+str(rgb.green/257.0)+', '+str(rgb.blue/257.0)+', '+a+')'
+		self.parent.finalSettings['background-color'][1] = value
+		self.parent.setBackgroundColorFrom(value)
+		# self.parent.updateCss('background-color', value)
+		# self.parent.finalSettings['background-color'][1] = value
+		# self.parent.applyCss()
+
+	def settingsPositionXChanged(self, widget):
+		self.parent.x = int(widget.get_value())
+		self.parent.finalSettings['position'][1] = [self.parent.x, self.parent.y]
+		print "Moving from settings", self.parent.x, self.parent.y
+		self.parent.move(self.parent.x, self.parent.y)
+
+	def settingsPositionYChanged(self, widget):
+		self.parent.y = int(widget.get_value())
+		self.parent.finalSettings['position'][1] = [self.parent.x, self.parent.y]
+		self.parent.move(self.parent.x, self.parent.y)
+		print "Moving from settings", self.parent.x, self.parent.y
+
+	def afterSettingsPlacement(self):
+		self.listBox.hide()
+
+	def resetSettings(self):
+		for key in self.parent.finalSettings:
+			self.parent.finalSettings[key][1] = None
+		self.parent.applySettings();
+		self.parent.applyCss();
+
+	def saveSettings(self):
+		self.settingsToWrite = { }
+
+		for key in self.parent.finalSettings:
+			if self.parent.finalSettings[key][1] != None:
+				#key has been edited, copy it over
+				self.parent.finalSettings[key][0] = self.parent.finalSettings[key][1]
+
+			#reset edited value
+			self.parent.finalSettings[key][1] = None
+			self.settingsToWrite[key] = stringifySettings(key, self.parent.finalSettings[key][0])
+
+		self.parent.applySettings()

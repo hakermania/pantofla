@@ -7,6 +7,7 @@ import Defaults.widget
 
 from Tools.output import *
 from Tools.simplemath import *
+from Tools.operations import *
 from multiprocessing.pool import ThreadPool
 
 class Widget():
@@ -34,7 +35,7 @@ class Widget():
 
 		self.cssClear = [ self.name, self.frameName ]
 
-		self.updateCss('background-color', 'rgba(0,0,0,0)', self.frameName)
+		self.updateCss('background-color', 'rgba(0, 0, 0, 0)', self.frameName)
 
 		self.frame.connect('destroy', self.destroyed)
 		self.label.connect('size-allocate', self.getSize)
@@ -47,18 +48,38 @@ class Widget():
 		self.pool = None
 		self.cssApplied = False
 
+		self.width, self.height = self.frame.get_size_request()
+
 	def getSize(self, widget, allocation):
+		print 'GETTING SIZE'
 		if not self.cssApplied:
 			return
-		self.width=allocation.width
-		self.height=allocation.height
+		self.width = allocation.width
+		self.height = allocation.height
 		if(self.hMid):
 			self.x=(self.parent.width - self.width)/2.0
 		if(self.vMid):
 			self.y=(self.parent.height - self.height)/2.0
 		if(self.hMid or self.vMid):
 			self.parent.fixed.move(self.frame, self.x, self.y)
+			self.parent.connect('check-resize', self.gadgetResize)
 		widget.disconnect_by_func(self.getSize)
+
+	def gadgetResize(self, widget):
+		print "RESIZED!"
+		setAtLeastOne = False
+		if self.hMid:
+			if (self.parent.width-self.width)/2.0 != self.x:
+				self.x = (self.parent.width - self.width)/2.0
+				setAtLeastOne = True
+		if self.vMid:
+			if (self.parent.height-self.height)/2.0 != self.y:
+				self.y = (self.parent.height - self.height)/2.0
+				setAtLeastOne = True
+
+		if setAtLeastOne:
+			self.parent.fixed.move(self.frame, self.x, self.y)
+			print 'moving!'
 
 	def setPos(self, x, y):
 		self.x=x; self.y=y #todo remove pos
@@ -71,7 +92,7 @@ class Widget():
 		#first item is the normal value, second is the edited one (to allow reset values, we need to keep both the original and the edited)
 		self.finalSettings = {}
 		self.finalSettings['text'] = ['Hello, World!', None]
-		self.finalSettings['size'] = [[0, 0], None]
+		self.finalSettings['size'] = [[0, 0], [1, 1]]
 		self.finalSettings['align'] = [Gtk.Align.START, None]
 		self.finalSettings['font'] = ['Ubuntu 20', None]
 		self.finalSettings['color'] = ['rgba(255, 255, 255, 1)', None]
@@ -212,6 +233,11 @@ class Widget():
 			#no function enabled, so add the text instead :D
 			self.label.set_text(self.finalSettings['text'][0])
 		self.frame.set_size_request(self.finalSettings['size'][0][0],self.finalSettings['size'][0][1])
+		if self.hMid:
+			self.x = (self.parent.width - self.width) / 2
+		if self.vMid:
+			self.y = (self.parent.height - self.height) / 2
+
 		self.parent.fixed.move(self.frame, self.x, self.y)
 		self.label.set_halign(self.finalSettings['align'][0])
 		self.updateCss('font', self.finalSettings['font'][0])
@@ -261,8 +287,10 @@ class Settings():
 
 	def getSettingsWidgets(self):
 
+		#One row is the Label button to show/hide the options of it and the other row is another listbox with the options
 		rowArray = []
 		
+		#this listbox holds all the settings of the widget
 		self.listBox = Gtk.ListBox()
 		self.listBox.set_hexpand(True)
 		self.listBox.set_vexpand(True)
@@ -286,12 +314,18 @@ class Settings():
 
 		hbox.pack_start(Gtk.Label('X'), False, True, 0)
 
-		spinbox = Gtk.SpinButton.new_with_range(0, 5000, 1)
-		spinbox.set_value(self.parent.x)
-		spinbox.connect('value-changed', self.settingsPositionXChanged)
-		spinbox.props.valign = Gtk.Align.CENTER
+		self.checkBoxXMiddle = Gtk.CheckButton('Middle')
+		self.checkBoxXMiddle.set_active(self.parent.hMid)
+		self.checkBoxXMiddle.connect('toggled', self.labelXMiddle)
 
-		hbox.pack_start(spinbox, False, True, 0)
+		hbox.pack_start(self.checkBoxXMiddle, False, True, 0)
+
+		self.spinboxPosX = Gtk.SpinButton.new_with_range(0, 5000, 1)
+		self.spinboxPosX.set_value(self.parent.x)
+		self.spinboxPosX.connect('value-changed', self.settingsPositionXChanged)
+		self.spinboxPosX.props.valign = Gtk.Align.CENTER
+
+		hbox.pack_start(self.spinboxPosX, False, True, 0)
 
 		hbox.pack_start(Gtk.Label('Y'), False, True, 0)
 
@@ -316,7 +350,7 @@ class Settings():
 		self.switch.props.valign = Gtk.Align.CENTER
 		self.switch.connect('notify::active', self.functionStateChanged)
 
-		if(self.parent.finalSettings['function'][0] != None):
+		if(self.parent.finalSettings['function'][0] != None and self.parent.finalSettings['function'][0] != ''):
 			#the label listens to some function
 			self.switch.set_state(True)
 		else:
@@ -338,9 +372,9 @@ class Settings():
 		hbox.pack_start(self.combo, True, True, 0)
 
 		self.textEntry = Gtk.Entry()
+		self.textEntry.set_text(self.parent.finalSettings['text'][0])
 		self.textEntry.connect('changed', self.settingsTextChanged)
 		self.textEntry.props.valign = Gtk.Align.CENTER
-		self.textEntry.set_text(self.parent.finalSettings['text'][0])
 
 		hbox.pack_start(self.textEntry, True, True, 0)
 
@@ -367,7 +401,7 @@ class Settings():
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
 		
 		hbox.pack_start(Gtk.Label('Color'), False, True, 0)
-		button = Gtk.ColorButton.new_with_rgba(self.colorValueToRgba(self.parent.finalSettings['color'][0]))
+		button = Gtk.ColorButton.new_with_rgba(colorValueToRgba(self.parent.finalSettings['color'][0]))
 		button.set_use_alpha(True)
 		button.connect('color-set', self.getSelectedColor)
 		button.props.valign = Gtk.Align.CENTER
@@ -384,19 +418,22 @@ class Settings():
 
 		return rowArray
 
-	def colorValueToRgba(self, color):
-		values = rgbaToValues(color)
-		if(len(values)!=4):
-			stderr('Color value seems to be broken')
-			return Gdk.RGBA(0, 0, 0, 0)
-		print values
-		return Gdk.RGBA(int(float(values[0]))/255.0, int(float(values[1]))/255.0, int(float(values[2]))/255.0, float(values[3]))
-
 	def showOptions(self, widget):
 		if(self.listBox.is_visible()):
 			self.listBox.hide()
 		else:
 			self.listBox.show()
+
+	def labelXMiddle(self, widget):
+		print 'Widget active?', widget.get_active()
+		if widget.get_active():
+			self.parent.hMid = True
+			self.parent.x = (self.parent.parent.width - self.parent.width)/2.0
+		else:
+			self.parent.vMid = False
+			self.parent.x = self.spinboxPosX.get_value()
+		self.spinboxPosX.set_sensitive(not widget.get_active())
+		self.parent.parent.fixed.move(self.parent.frame, self.parent.x, self.parent.y)
 
 	def functionChanged(self, widget):
 		if(self.switch.get_state()!=True):
@@ -441,7 +478,7 @@ class Settings():
 					self.combo.set_active(0)
 		else:
 			#don't use function
-			self.parent.finalSettings.pop('fuction', None)
+			self.parent.finalSettings['function'][1] = None; #todo wtf is this? .pop('function', None)
 			self.textEntry.show()
 			self.combo.hide()
 			self.parent.functionIndex=-1
@@ -468,7 +505,7 @@ class Settings():
 	def getSelectedColor(self, widget):
 		rgb=widget.get_color()
 		a=str(widget.get_alpha()/65535.0)
-		value = 'rgba('+str(rgb.red/257.0)+','+str(rgb.green/257.0)+','+str(rgb.blue/257.0)+','+a+')'
+		value = 'rgba('+str(rgb.red/257.0)+', '+str(rgb.green/257.0)+', '+str(rgb.blue/257.0)+', '+a+')'
 		self.parent.updateCss('color', value)
 		self.parent.finalSettings['color'][1] = value
 		self.parent.applyCss()
@@ -482,6 +519,7 @@ class Settings():
 		else:
 			self.textEntry.show()
 			self.combo.hide()
+		self.spinboxPosX.set_sensitive(not self.checkBoxXMiddle.get_active())
 
 	def resetSettings(self):
 		for key in self.parent.finalSettings:
@@ -489,27 +527,19 @@ class Settings():
 		self.parent.applySettings();
 		self.parent.applyCss();
 
-	def stringifySettings(self, key, value):
-		"""Converts the settings of the widget to the string value that has to be stored inside the configuration file"""
-		if type(value) is str:
-			return value
-
-		if type(value) is list:
-			return ','.join(str(x) for x in value)
-
-		return value
-
 	def saveSettings(self):
-
 		self.settingsToWrite = { }
 
 		for key in self.parent.finalSettings:
 			#todo write all values, not only the modified ones, wtf are you doing man
 			if self.parent.finalSettings[key][1] != None:
-				#key has been edited, copy it over and reset the edited value to None
+				#key has been edited, copy it over
 				self.parent.finalSettings[key][0] = self.parent.finalSettings[key][1]
+			#reset edited value
+			if type(self.parent.finalSettings[key][0]) is list:
+				self.parent.finalSettings[key][1] = [0]*len(self.parent.finalSettings[key][0])
+			else:
 				self.parent.finalSettings[key][1] = None
-
-				self.settingsToWrite[key] = self.stringifySettings(key, self.parent.finalSettings[key][0])
+			self.settingsToWrite[key] = stringifySettings(key, self.parent.finalSettings[key][0])
 
 		self.parent.applySettings()

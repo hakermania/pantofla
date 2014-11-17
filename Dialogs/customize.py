@@ -55,8 +55,6 @@ class Customize(Gtk.Window):
 		self.grid.attach(self.lowerBox, 1, 1, 1, 1)
 		self.grid.attach(self.resetButton, 0, 1, 1, 1)
 
-		self.constructWidgetSettings()
-
 		self.add(self.grid)
 
 		self.show_all()
@@ -65,9 +63,13 @@ class Customize(Gtk.Window):
 
 		self.controllingWidgets = []
 
+		#append the widget's settings
+		self.appendSettings(self.parent.settings())
+
 	def destroyed(self, widget):
 		if(self.parent!=None):
 			self.parent.customizeDialogShown=False
+		print self.parent.get_position(), 6
 
 	def addControllingWidget(self, widget):
 		self.controllingWidgets.append(widget)
@@ -79,49 +81,37 @@ class Customize(Gtk.Window):
 		#do any actions necessary for each one, after showing them (maybe hide some etc)
 		for widget in self.controllingWidgets:
 			widget.settingsObj.afterSettingsPlacement()
+		self.parent.settingsObj.afterSettingsPlacement()
 
 	def closeButtonClicked(self, widget):
 		for widget in self.controllingWidgets:
 			widget.settingsObj.resetSettings()
+		self.parent.settingsObj.resetSettings()
 		self.destroy()
 
 	def resetButtonClicked(self, widget):
 		for child in self.listBox.get_children():
 			self.listBox.remove(child)
+		self.parent.settingsObj.resetSettings()
+		self.appendSettings(self.parent.settings())
 		for widget in self.controllingWidgets:
 			widget.settingsObj.resetSettings()
 			self.appendSettings(widget.settings())
 		self.showWidgets()
 
 	def saveButtonClicked(self, widget):
-		print 'save button clicked' #todo remove
+		print self.parent.get_position(), 1
 		for widget in self.controllingWidgets:
-			print 'saving settings...'
 			widget.settingsObj.saveSettings()
-		print 'writing to file....'
+		self.parent.settingsObj.saveSettings()
+		print self.parent.get_position(), 2
 		if not self.parent.writeSettingsFile():
 			#todo show error messagebox
 			stderr('PARENT reported couldn\'t write to configuration file')
 			return
-		self.parent.applyConfigurationFile()
-		print 'All ok!'
-
+		self.destroy()
 
 	def appendSettings(self, listBoxRows):
 		for row in listBoxRows:
 			self.listBox.add(row)
-
-	def constructWidgetSettings(self):
-		row = Gtk.ListBoxRow()
-		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
-		row.add(hbox)
-		label = Gtk.Label("This is here by default", xalign=0)
-
-		switch = Gtk.Switch()
-		switch.props.valign = Gtk.Align.CENTER
-
-		hbox.pack_start(label, True, True, 0)
 		
-		hbox.pack_start(switch, False, True, 0)
-
-		self.listBox.add(row)

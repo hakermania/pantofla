@@ -9,6 +9,12 @@ lastTimeGotDown=0
 
 dataTypes = [ "B", "K", "M", "G", "T" ]
 
+def niceRound(number):
+	if number == int(number):
+		return int(number)
+	else:
+		return number
+
 def dataToNiceString(data, decimalRound=None):
 	data=int(data)
 	maxValue=len(dataTypes)-1
@@ -19,15 +25,15 @@ def dataToNiceString(data, decimalRound=None):
 		niceData/=1024.0
 		if(counter==maxValue):
 			break
-	if(decimalRound==None):
+	if(decimalRound == None):
 		decimalRound=1
 		if(int(niceData) < 10):
 			decimalRound=2
-		return str(round(niceData, decimalRound))+dataTypes[counter]
-	elif(decimalRound==0):
+		return str(niceRound(round(niceData, decimalRound)))+dataTypes[counter]
+	elif(decimalRound == 0):
 		return str(int(round(niceData, decimalRound)))+dataTypes[counter]
 	else:
-		return str(round(niceData, decimalRound))+dataTypes[counter]
+		return str(niceRound(round(niceData, decimalRound)))+dataTypes[counter]
 
 def timeNow():
 	return int(round(time.time() * 1000))
