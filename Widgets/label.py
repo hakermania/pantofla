@@ -19,8 +19,8 @@ class Widget():
 		self.GUIName=name
 		self.name=parentName+name
 		self.label.set_name(self.name)
-		
-		self.initializeSettings()
+
+		self.sm = Settings(self)
 
 		self.styleProvider=Gtk.CssProvider()
 		Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.styleProvider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
@@ -88,21 +88,6 @@ class Widget():
 		for name in self.cssClear:
 			self.styleProvider.load_from_data('#'+name+' { } ')
 
-	def initializeSettings(self):
-		#first item is the normal value, second is the edited one (to allow reset values, we need to keep both the original and the edited)
-		self.finalSettings = {}
-		self.finalSettings['text'] = ['Hello, World!', None]
-		self.finalSettings['size'] = [[0, 0], [1, 1]]
-		self.finalSettings['align'] = [Gtk.Align.START, None]
-		self.finalSettings['font'] = ['Ubuntu 20', None]
-		self.finalSettings['color'] = ['rgba(255, 255, 255, 1)', None]
-		self.finalSettings['border'] = ['none', None]
-		self.finalSettings['border-top'] = ['none', None]
-		self.finalSettings['border-right'] = ['none', None]
-		self.finalSettings['border-bottom'] = ['none', None]
-		self.finalSettings['border-left'] = ['none', None]
-		self.finalSettings['function'] = [None, None]
-
 	def update(self):
 		if(self.function==None):
 			return
@@ -120,40 +105,40 @@ class Widget():
 
 	def runCommand(self, key, value, lineCount, configurationFile):
 		if(key=='text'):
-			self.finalSettings['text'][0] = value
+			self.sm.values['text'][0] = value
 		elif(key=='size'):
 			size=value.split(',')
-			self.finalSettings['size'][0] = [int(size[0]), int(size[1])]
+			self.sm.values['size'][0] = [int(size[0]), int(size[1])]
 		elif(key=='align'):
 			if(value=='right'):
-				self.finalSettings['align'][0] = Gtk.Align.END
+				self.sm.values['align'][0] = Gtk.Align.END
 			elif(value=='left'):
-				self.finalSettings['align'][0] = Gtk.Align.START
+				self.sm.values['align'][0] = Gtk.Align.START
 			else:
 				stderr(configurationFile+', line '+str(lineCount)+': Badly formatted command "align": Format: align = left/right.\nSkipping...')
 				return
 		elif(key=='font'):
-			self.finalSettings['font'][0] = value
+			self.sm.values['font'][0] = value
 		elif(key=='color'):
 			self.updateCss('color', value)
-			self.finalSettings['color'][0] = value
+			self.sm.values['color'][0] = value
 		elif(key=='border'):
 			self.updateCss('border', value)
-			self.finalSettings['border'][0] = value
+			self.sm.values['border'][0] = value
 		elif(key=='border-top'):
 			self.updateCss('border-top', value)
-			self.finalSettings['border-top'][0] = value
+			self.sm.values['border-top'][0] = value
 		elif(key=='border-right'):
 			self.updateCss('border-right', value)
-			self.finalSettings['border-right'][0] = value
+			self.sm.values['border-right'][0] = value
 		elif(key=='border-bottom'):
 			self.updateCss('border-bottom', value)
-			self.finalSettings['border-bottom'][0] = value
+			self.sm.values['border-bottom'][0] = value
 		elif(key=='border-left'):
 			self.updateCss('border-left', value)
-			self.finalSettings['border-left'][0] = value
+			self.sm.values['border-left'][0] = value
 		elif(key=='function'):
-			self.finalSettings['function'][0] = value
+			self.sm.values['function'][0] = value
 		else:
 			stderr(configurationFile+', line '+str(lineCount)+': Unknown command.')
 
@@ -162,7 +147,7 @@ class Widget():
 			modified = False
 		else:
 			#function has been modified from the settings
-			self.finalSettings['function'][1] = value
+			self.sm.values['function'][1] = value
 		if(value=='networkUp'):
 			from Tools.network import networkUp, dataToNiceString
 			self.function=networkUp
@@ -229,24 +214,28 @@ class Widget():
 
 
 	def applySettings(self):
-		if not self.enableFunction(self.finalSettings['function'][0]):
+		if not self.enableFunction(self.sm.values['function'][0]):
 			#no function enabled, so add the text instead :D
-			self.label.set_text(self.finalSettings['text'][0])
-		self.frame.set_size_request(self.finalSettings['size'][0][0],self.finalSettings['size'][0][1])
-		if self.hMid:
+			self.label.set_text(self.sm.values['text'][0])
+		self.frame.set_size_request(self.sm.values['size'][0][0],self.sm.values['size'][0][1])
+		if self.sm.values['position'][0][0] == 'middle':
 			self.x = (self.parent.width - self.width) / 2
-		if self.vMid:
+		else:
+			self.x = self.sm.values['position'][0][0]
+		if self.sm.values['position'][0][1] == 'middle':
 			self.y = (self.parent.height - self.height) / 2
+		else:
+			self.y = self.sm.values['position'][0][1]
 
 		self.parent.fixed.move(self.frame, self.x, self.y)
-		self.label.set_halign(self.finalSettings['align'][0])
-		self.updateCss('font', self.finalSettings['font'][0])
-		self.updateCss('color', self.finalSettings['color'][0])
-		self.updateCss('border', self.finalSettings['border'][0])
-		self.updateCss('border-top', self.finalSettings['border-top'][0])
-		self.updateCss('border-right', self.finalSettings['border-right'][0])
-		self.updateCss('border-bottom', self.finalSettings['border-bottom'][0])
-		self.updateCss('border-left', self.finalSettings['border-left'][0])
+		self.label.set_halign(self.sm.values['align'][0])
+		self.updateCss('font', self.sm.values['font'][0])
+		self.updateCss('color', self.sm.values['color'][0])
+		self.updateCss('border', self.sm.values['border'][0])
+		self.updateCss('border-top', self.sm.values['border-top'][0])
+		self.updateCss('border-right', self.sm.values['border-right'][0])
+		self.updateCss('border-bottom', self.sm.values['border-bottom'][0])
+		self.updateCss('border-left', self.sm.values['border-left'][0])
 		
 
 	def applyCss(self):
@@ -270,9 +259,7 @@ class Widget():
 		return self.frame
 
 	def settings(self):
-		self.settingsObj = Settings(self)
-		return self.settingsObj.getSettingsWidgets()
-
+		return self.sm.getSettingsWidgets()
 
 class Settings():
 	def __init__(self, parent):
@@ -283,6 +270,21 @@ class Settings():
 			'Ram Percent', 'HDD Percent', 'Uptime'
 			]:
 			self.functionNamesStore.append([name])
+
+		#default settings values
+		self.values = {}
+		self.values['text'] = ['Hello, World!', None]
+		self.values['position'] =[['middle','middle'], [0,0]]
+		self.values['size'] = [[0, 0], [1, 1]]
+		self.values['align'] = [Gtk.Align.START, None]
+		self.values['font'] = ['Ubuntu 20', None]
+		self.values['color'] = ['rgba(255, 255, 255, 1)', None]
+		self.values['border'] = ['none', None]
+		self.values['border-top'] = ['none', None]
+		self.values['border-right'] = ['none', None]
+		self.values['border-bottom'] = ['none', None]
+		self.values['border-left'] = ['none', None]
+		self.values['function'] = [None, None]
 		
 
 	def getSettingsWidgets(self):
@@ -350,7 +352,7 @@ class Settings():
 		self.switch.props.valign = Gtk.Align.CENTER
 		self.switch.connect('notify::active', self.functionStateChanged)
 
-		if(self.parent.finalSettings['function'][0] != None and self.parent.finalSettings['function'][0] != ''):
+		if(self.values['function'][0] != None and self.values['function'][0] != ''):
 			#the label listens to some function
 			self.switch.set_state(True)
 		else:
@@ -372,7 +374,7 @@ class Settings():
 		hbox.pack_start(self.combo, True, True, 0)
 
 		self.textEntry = Gtk.Entry()
-		self.textEntry.set_text(self.parent.finalSettings['text'][0])
+		self.textEntry.set_text(self.values['text'][0])
 		self.textEntry.connect('changed', self.settingsTextChanged)
 		self.textEntry.props.valign = Gtk.Align.CENTER
 
@@ -386,7 +388,7 @@ class Settings():
 		
 		hbox.pack_start(Gtk.Label('Font'), False, True, 0)
 
-		button = Gtk.FontButton.new_with_font(self.parent.finalSettings['font'][0])
+		button = Gtk.FontButton.new_with_font(self.values['font'][0])
 		button.set_use_font(True)
 		button.set_use_size(True)
 		button.connect('font-set', self.getSelectedFont)
@@ -401,7 +403,7 @@ class Settings():
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
 		
 		hbox.pack_start(Gtk.Label('Color'), False, True, 0)
-		button = Gtk.ColorButton.new_with_rgba(colorValueToRgba(self.parent.finalSettings['color'][0]))
+		button = Gtk.ColorButton.new_with_rgba(colorValueToRgba(self.values['color'][0]))
 		button.set_use_alpha(True)
 		button.connect('color-set', self.getSelectedColor)
 		button.props.valign = Gtk.Align.CENTER
@@ -462,7 +464,7 @@ class Settings():
 		else:
 			self.parent.function = None
 			self.parent.functionIndex = -1
-			self.parent.finalSettings['function'][0] = self.parent.finalSettings['function'][1] = None
+			self.values['function'][0] = self.values['function'][1] = None
 			self.parent.label.set_text(self.textEntry.get_text())
 		self.parent.update()
 
@@ -478,7 +480,7 @@ class Settings():
 					self.combo.set_active(0)
 		else:
 			#don't use function
-			self.parent.finalSettings['function'][1] = None; #todo wtf is this? .pop('function', None)
+			self.values['function'][1] = None; #todo wtf is this? .pop('function', None)
 			self.textEntry.show()
 			self.combo.hide()
 			self.parent.functionIndex=-1
@@ -486,7 +488,7 @@ class Settings():
 		self.setParentFunction()
 
 	def settingsTextChanged(self, widget):
-		self.parent.finalSettings['text'][1] = widget.get_text()
+		self.values['text'][1] = widget.get_text()
 		self.parent.label.set_text(widget.get_text())
 
 	def settingsPositionXChanged(self, widget):
@@ -499,7 +501,7 @@ class Settings():
 
 	def getSelectedFont(self, widget):
 		self.parent.updateCss('font', widget.get_font_name())
-		self.parent.finalSettings['font'][1] = widget.get_font_name()
+		self.values['font'][1] = widget.get_font_name()
 		self.parent.applyCss()
 
 	def getSelectedColor(self, widget):
@@ -507,7 +509,7 @@ class Settings():
 		a=str(widget.get_alpha()/65535.0)
 		value = 'rgba('+str(rgb.red/257.0)+', '+str(rgb.green/257.0)+', '+str(rgb.blue/257.0)+', '+a+')'
 		self.parent.updateCss('color', value)
-		self.parent.finalSettings['color'][1] = value
+		self.values['color'][1] = value
 		self.parent.applyCss()
 
 	def afterSettingsPlacement(self):
@@ -522,24 +524,24 @@ class Settings():
 		self.spinboxPosX.set_sensitive(not self.checkBoxXMiddle.get_active())
 
 	def resetSettings(self):
-		for key in self.parent.finalSettings:
-			self.parent.finalSettings[key][1] = None
+		for key in self.values:
+			self.values[key][1] = None
 		self.parent.applySettings();
 		self.parent.applyCss();
 
 	def saveSettings(self):
 		self.settingsToWrite = { }
 
-		for key in self.parent.finalSettings:
+		for key in self.values:
 			#todo write all values, not only the modified ones, wtf are you doing man
-			if self.parent.finalSettings[key][1] != None:
+			if self.values[key][1] != None:
 				#key has been edited, copy it over
-				self.parent.finalSettings[key][0] = self.parent.finalSettings[key][1]
+				self.values[key][0] = self.values[key][1]
 			#reset edited value
-			if type(self.parent.finalSettings[key][0]) is list:
-				self.parent.finalSettings[key][1] = [0]*len(self.parent.finalSettings[key][0])
+			if type(self.values[key][0]) is list:
+				self.values[key][1] = [0]*len(self.values[key][0])
 			else:
-				self.parent.finalSettings[key][1] = None
-			self.settingsToWrite[key] = stringifySettings(key, self.parent.finalSettings[key][0])
+				self.values[key][1] = None
+			self.settingsToWrite[key] = stringifySettings(key, self.values[key][0])
 
 		self.parent.applySettings()

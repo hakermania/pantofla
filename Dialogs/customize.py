@@ -80,30 +80,30 @@ class Customize(Gtk.Window):
 		self.show_all()
 		#do any actions necessary for each one, after showing them (maybe hide some etc)
 		for widget in self.controllingWidgets:
-			widget.settingsObj.afterSettingsPlacement()
-		self.parent.settingsObj.afterSettingsPlacement()
+			widget.sm.afterSettingsPlacement()
+		self.parent.sm.afterSettingsPlacement()
 
 	def closeButtonClicked(self, widget):
 		for widget in self.controllingWidgets:
-			widget.settingsObj.resetSettings()
-		self.parent.settingsObj.resetSettings()
+			widget.sm.resetSettings()
+		self.parent.sm.resetSettings()
 		self.destroy()
 
 	def resetButtonClicked(self, widget):
 		for child in self.listBox.get_children():
 			self.listBox.remove(child)
-		self.parent.settingsObj.resetSettings()
+		self.parent.sm.resetSettings()
 		self.appendSettings(self.parent.settings())
 		for widget in self.controllingWidgets:
-			widget.settingsObj.resetSettings()
+			widget.sm.resetSettings()
 			self.appendSettings(widget.settings())
 		self.showWidgets()
 
 	def saveButtonClicked(self, widget):
 		print self.parent.get_position(), 1
 		for widget in self.controllingWidgets:
-			widget.settingsObj.saveSettings()
-		self.parent.settingsObj.saveSettings()
+			widget.sm.saveSettings()
+		self.parent.sm.saveSettings()
 		print self.parent.get_position(), 2
 		if not self.parent.writeSettingsFile():
 			#todo show error messagebox
