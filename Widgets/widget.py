@@ -95,16 +95,13 @@ class Widget(Gtk.Window):
 	def putReceiverToWidget(self, receiver):
 		x, y = 0, 0
 		if(not representsInt(self.currentPosition[0])):
-			self.pantoflaWidgetManager.receivers[receiver].hMid=True
-			x=0
+			self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][0] = 'middle'
 		else:
-			x=self.currentPosition[0]
+			x = self.currentPosition[0]
 		if(not representsInt(self.currentPosition[1])):
-			self.pantoflaWidgetManager.receivers[receiver].vMid=True
-			y=0
+			self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][1] = 'middle'
 		else:
-			y=self.currentPosition[1]
-		print 'putting', receiver, 'to widget'
+			y = self.currentPosition[1]
 		self.pantoflaWidgetManager.receivers[receiver].setPos(x, y)
 		self.fixed.put(self.pantoflaWidgetManager.receivers[receiver].widget(), x, y)
 
@@ -325,16 +322,7 @@ class Widget(Gtk.Window):
 
 		for receiver in self.pantoflaWidgetManager.receivers:
 			confF.write('\n')
-			strToWrite = ['', '']
-			if self.pantoflaWidgetManager.receivers[receiver].hMid:
-				strToWrite[0] = 'middle'
-			else:
-				strToWrite[0] = str(int(float(self.pantoflaWidgetManager.receivers[receiver].x)))
-
-			if self.pantoflaWidgetManager.receivers[receiver].vMid:
-				strToWrite[1] = 'middle'
-			else:
-				strToWrite[1] = str(int(float(self.pantoflaWidgetManager.receivers[receiver].y)))
+			strToWrite = [str(self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][0]), str(self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][1])]
 
 			confF.write('['+receiver+' ,'+','.join(strToWrite)+']')
 			confF.write('\n')

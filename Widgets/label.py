@@ -13,8 +13,6 @@ from multiprocessing.pool import ThreadPool
 class Widget():
 	def __init__(self, name, parentName, parent):
 		self.parent=parent
-		self.hMid=False
-		self.vMid=False
 		self.label=Gtk.Label()
 		self.GUIName=name
 		self.name=parentName+name
@@ -47,6 +45,7 @@ class Widget():
 		self.functionData = None
 		self.pool = None
 		self.cssApplied = False
+		self.isMonitoringSize = False
 
 		self.width, self.height = self.frame.get_size_request()
 
@@ -56,30 +55,42 @@ class Widget():
 			return
 		self.width = allocation.width
 		self.height = allocation.height
-		if(self.hMid):
+		if(self.sm.values['position'][0][0] == 'middle'):
 			self.x=(self.parent.width - self.width)/2.0
-		if(self.vMid):
+		if(self.sm.values['position'][0][1] == 'middle'):
 			self.y=(self.parent.height - self.height)/2.0
-		if(self.hMid or self.vMid):
-			self.parent.fixed.move(self.frame, self.x, self.y)
-			self.parent.connect('check-resize', self.gadgetResize)
+		if(self.sm.values['position'][0][0] == 'middle' or self.sm.values['position'][0][1] == 'middle'):
+			self.parent.moveChild(self.frame, self.x, self.y)
+			self.monitorSize(True)
 		widget.disconnect_by_func(self.getSize)
 
 	def gadgetResize(self, widget):
 		print "RESIZED!"
 		setAtLeastOne = False
-		if self.hMid:
+		if self.sm.values['position'][0][0] == 'middle':
 			if (self.parent.width-self.width)/2.0 != self.x:
 				self.x = (self.parent.width - self.width)/2.0
 				setAtLeastOne = True
-		if self.vMid:
+		if self.sm.values['position'][0][1] == 'middle':
 			if (self.parent.height-self.height)/2.0 != self.y:
 				self.y = (self.parent.height - self.height)/2.0
 				setAtLeastOne = True
 
 		if setAtLeastOne:
-			self.parent.fixed.move(self.frame, self.x, self.y)
+			self.parent.moveChild(self.frame, self.x, self.y)
 			print 'moving!'
+
+	def monitorSize(self, monitor):
+		if(monitor):
+			if self.isMonitoringSize:
+				return
+			self.isMonitoringSize = True
+			self.parent.connect('check-resize', self.gadgetResize)
+		else:
+			if not self.isMonitoringSize:
+				return
+			self.isMonitoringSize = False
+			self.parent.disconnect_by_func(self.gadgetResize)
 
 	def setPos(self, x, y):
 		self.x=x; self.y=y #todo remove pos
@@ -218,6 +229,8 @@ class Widget():
 			#no function enabled, so add the text instead :D
 			self.label.set_text(self.sm.values['text'][0])
 		self.frame.set_size_request(self.sm.values['size'][0][0],self.sm.values['size'][0][1])
+
+		print 'Label applying position:', self.sm.values['position'][0]
 		if self.sm.values['position'][0][0] == 'middle':
 			self.x = (self.parent.width - self.width) / 2
 		else:
@@ -227,7 +240,7 @@ class Widget():
 		else:
 			self.y = self.sm.values['position'][0][1]
 
-		self.parent.fixed.move(self.frame, self.x, self.y)
+		self.parent.moveChild(self.frame, self.x, self.y)
 		self.label.set_halign(self.sm.values['align'][0])
 		self.updateCss('font', self.sm.values['font'][0])
 		self.updateCss('color', self.sm.values['color'][0])
@@ -317,7 +330,7 @@ class Settings():
 		hbox.pack_start(Gtk.Label('X'), False, True, 0)
 
 		self.checkBoxXMiddle = Gtk.CheckButton('Middle')
-		self.checkBoxXMiddle.set_active(self.parent.hMid)
+		self.checkBoxXMiddle.set_active(self.values['position'][0][0] == 'middle')
 		self.checkBoxXMiddle.connect('toggled', self.labelXMiddle)
 
 		hbox.pack_start(self.checkBoxXMiddle, False, True, 0)
@@ -331,12 +344,18 @@ class Settings():
 
 		hbox.pack_start(Gtk.Label('Y'), False, True, 0)
 
-		spinbox = Gtk.SpinButton.new_with_range(0, 5000, 1)
-		spinbox.set_value(self.parent.y)
-		spinbox.connect('value-changed', self.settingsPositionYChanged)
-		spinbox.props.valign = Gtk.Align.CENTER
+		self.checkBoxYMiddle = Gtk.CheckButton('Middle')
+		self.checkBoxYMiddle.set_active(self.values['position'][0][1] == 'middle')
+		self.checkBoxYMiddle.connect('toggled', self.labelYMiddle)
 
-		hbox.pack_start(spinbox, False, True, 0)
+		hbox.pack_start(self.checkBoxYMiddle, False, True, 0)
+
+		self.spinboxPosY = Gtk.SpinButton.new_with_range(0, 5000, 1)
+		self.spinboxPosY.set_value(self.parent.y)
+		self.spinboxPosY.connect('value-changed', self.settingsPositionYChanged)
+		self.spinboxPosY.props.valign = Gtk.Align.CENTER
+
+		hbox.pack_start(self.spinboxPosY, False, True, 0)
 
 		row.add(hbox)
 		self.listBox.add(row)
@@ -429,13 +448,34 @@ class Settings():
 	def labelXMiddle(self, widget):
 		print 'Widget active?', widget.get_active()
 		if widget.get_active():
-			self.parent.hMid = True
+			self.values['position'][0][0] = 'middle'
 			self.parent.x = (self.parent.parent.width - self.parent.width)/2.0
+			self.parent.monitorSize(True)
 		else:
-			self.parent.vMid = False
 			self.parent.x = self.spinboxPosX.get_value()
+			self.values['position'][0][0] = self.parent.x
+			if not self.checkBoxYMiddle.get_state():
+				#do not middle anything
+				self.parent.monitorSize(False)
+
 		self.spinboxPosX.set_sensitive(not widget.get_active())
-		self.parent.parent.fixed.move(self.parent.frame, self.parent.x, self.parent.y)
+		self.parent.parent.moveChild(self.parent.frame, self.parent.x, self.parent.y)
+
+	def labelYMiddle(self, widget):
+		print 'Widget active?', widget.get_active()
+		if widget.get_active():
+			self.values['position'][0][1] = 'middle'
+			self.parent.y = (self.parent.parent.height - self.parent.height)/2.0
+			self.parent.monitorSize(True)
+		else:
+			self.parent.y = self.spinboxPosY.get_value()
+			self.values['position'][0][1] = self.parent.y
+			if not self.checkBoxXMiddle.get_state():
+				#do not middle anything
+				self.parent.monitorSize(False)
+
+		self.spinboxPosY.set_sensitive(not widget.get_active())
+		self.parent.parent.moveChild(self.parent.frame, self.parent.x, self.parent.y)
 
 	def functionChanged(self, widget):
 		if(self.switch.get_state()!=True):
@@ -493,11 +533,11 @@ class Settings():
 
 	def settingsPositionXChanged(self, widget):
 		self.parent.x=int(widget.get_value())
-		self.parent.parent.fixed.move(self.parent.frame, self.parent.x, self.parent.y)
+		self.parent.parent.moveChild(self.parent.frame, self.parent.x, self.parent.y)
 
 	def settingsPositionYChanged(self, widget):
 		self.parent.y=int(widget.get_value())
-		self.parent.parent.fixed.move(self.parent.frame, self.parent.x, self.parent.y)
+		self.parent.parent.moveChild(self.parent.frame, self.parent.x, self.parent.y)
 
 	def getSelectedFont(self, widget):
 		self.parent.updateCss('font', widget.get_font_name())
@@ -522,6 +562,7 @@ class Settings():
 			self.textEntry.show()
 			self.combo.hide()
 		self.spinboxPosX.set_sensitive(not self.checkBoxXMiddle.get_active())
+		self.spinboxPosY.set_sensitive(not self.checkBoxYMiddle.get_active())
 
 	def resetSettings(self):
 		for key in self.values:

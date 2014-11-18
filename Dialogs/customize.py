@@ -104,7 +104,6 @@ class Customize(Gtk.Window):
 		for widget in self.controllingWidgets:
 			widget.sm.saveSettings()
 		self.parent.sm.saveSettings()
-		print self.parent.get_position(), 2
 		if not self.parent.writeSettingsFile():
 			#todo show error messagebox
 			stderr('PARENT reported couldn\'t write to configuration file')
