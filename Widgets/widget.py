@@ -98,11 +98,12 @@ class Widget(Gtk.Window):
 			self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][0] = 'middle'
 		else:
 			x = self.currentPosition[0]
+			self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][0] = x
 		if(not representsInt(self.currentPosition[1])):
 			self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][1] = 'middle'
 		else:
 			y = self.currentPosition[1]
-		self.pantoflaWidgetManager.receivers[receiver].setPos(x, y)
+			self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][1] = y
 		self.fixed.put(self.pantoflaWidgetManager.receivers[receiver].widget(), x, y)
 
 	def moveChild(self, widget, x, y):
@@ -127,7 +128,6 @@ class Widget(Gtk.Window):
 
 			print 'Via reading the settings file, I concluded that position is', int(coords[0]), int(coords[1])
 			self.sm.values['position'][0] = [ int(coords[0]), int(coords[1]) ]
-			print self.sm.values['position']
 
 		elif(key == 'size'):
 			size=value.split(',')
@@ -258,7 +258,6 @@ class Widget(Gtk.Window):
 					self.currentPosition=[parts[1], parts[2]]
 					if receiver not in self.pantoflaWidgetManager.receivers:
 						for widget in self.pantoflaWidgetManager.widgets:
-							print receiver == receiver.rstrip('1234567890')
 							if receiver.rstrip('1234567890') == widget.receiver:
 								if not receiver in self.pantoflaWidgetManager.receivers:
 									self.pantoflaWidgetManager.receivers[receiver]=widget.Widget(receiver, self.name, self)
@@ -317,14 +316,22 @@ class Widget(Gtk.Window):
 		for key in self.sm.settingsToWrite:
 			confF.write(key+' = '+self.sm.settingsToWrite[key])
 			confF.write('\n')
-			print key, '=', self.sm.settingsToWrite[key]
 		self.sm = None
 
 		for receiver in self.pantoflaWidgetManager.receivers:
 			confF.write('\n')
-			strToWrite = [str(self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][0]), str(self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][1])]
 
-			confF.write('['+receiver+' ,'+','.join(strToWrite)+']')
+			x = None; y = None
+			if representsInt(self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][0]):
+				x = str(int(self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][0]))
+			else:
+				x = self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][0]
+			if representsInt(self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][1]):
+				y = str(int(self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][1]))
+			else:
+				y = self.pantoflaWidgetManager.receivers[receiver].sm.values['position'][0][1]
+
+			confF.write('['+receiver+', '+x+', '+y+']')
 			confF.write('\n')
 			#copy over only the first array item, aka only the normal preserved value, not the (possibly) edited one
 			for key in self.pantoflaWidgetManager.receivers[receiver].sm.settingsToWrite:

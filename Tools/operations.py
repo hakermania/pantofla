@@ -5,11 +5,7 @@ from gi.repository import Gtk, Gdk
 def stringifySettings(key, value):
 	"""Converts the settings of the widget to the string value that has to be stored inside the configuration file"""
 
-	if key == 'function':
-		print key, value
-
 	if value is None:
-		print 'EEE', key, value
 		return ''
 
 	if type(value) is str:
@@ -34,5 +30,4 @@ def colorValueToRgba(color):
 	if(len(values)!=4):
 		stderr('Color value seems to be broken')
 		return Gdk.RGBA(0, 0, 0, 0)
-	print values
 	return Gdk.RGBA(int(float(values[0]))/255.0, int(float(values[1]))/255.0, int(float(values[2]))/255.0, float(values[3]))
